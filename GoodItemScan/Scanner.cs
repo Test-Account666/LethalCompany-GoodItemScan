@@ -56,6 +56,18 @@ public static class Scanner {
                 if (isLineOfSightBlocked) continue;
             }
 
+            var parent = scanNodeProperties.transform.parent;
+
+            if (parent is null) continue;
+
+            var grabbableObject = parent.GetComponent<GrabbableObject>();
+
+            if ((grabbableObject?.isHeld ?? false) || (grabbableObject?.isHeldByEnemy ?? false)) continue;
+
+            var enemyAI = parent.GetComponent<EnemyAI>();
+
+            if (enemyAI?.isEnemyDead ?? false) continue;
+
             currentScanNodeCount += 1;
 
             if (currentScanNodeCount > ConfigManager.scanNodesHardLimit.Value) {
