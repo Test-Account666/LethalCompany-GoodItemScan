@@ -56,17 +56,8 @@ public static class Scanner {
                 if (isLineOfSightBlocked) continue;
             }
 
-            var parent = scanNodeProperties.transform.parent;
+            if (!IsScanNodeValid(scanNodeProperties)) continue;
 
-            if (parent is null) continue;
-
-            var grabbableObject = parent.GetComponent<GrabbableObject>();
-
-            if ((grabbableObject?.isHeld ?? false) || (grabbableObject?.isHeldByEnemy ?? false)) continue;
-
-            var enemyAI = parent.GetComponent<EnemyAI>();
-
-            if (enemyAI?.isEnemyDead ?? false) continue;
 
             currentScanNodeCount += 1;
 
@@ -77,6 +68,22 @@ public static class Scanner {
 
             localPlayer.StartCoroutine(AddScanNodeToUI(scanNodeProperties, currentScanNodeCount));
         }
+    }
+
+    private static bool IsScanNodeValid(ScanNodeProperties scanNodeProperties) {
+        var parent = scanNodeProperties.transform.parent;
+
+        if (parent is null) return false;
+
+        var grabbableObject = parent.GetComponent<GrabbableObject>();
+
+        if ((grabbableObject?.isHeld ?? false)
+         || (grabbableObject?.isHeldByEnemy ?? false)
+         || (grabbableObject?.deactivated ?? false)) return false;
+
+        var enemyAI = parent.GetComponent<EnemyAI>();
+
+        return !(enemyAI?.isEnemyDead ?? false);
     }
 
     private static IEnumerator AddScanNodeToUI(ScanNodeProperties scanNodeProperties, long currentScanNodeCount) {
@@ -99,6 +106,8 @@ public static class Scanner {
     }
 
     public static bool IsScanNodeVisible(ScanNodeProperties node) {
+        if (!node.gameObject.activeSelf) return false;
+
         var localPlayer = StartOfRound.Instance.localPlayerController;
 
         if (localPlayer is null) return false;
@@ -110,6 +119,9 @@ public static class Scanner {
         direction.Normalize();
 
         var cosHalfFOV = Mathf.Cos(camera.fieldOfView * 0.6f * Mathf.Deg2Rad);
-        return Vector3.Dot(direction, camera.transform.forward) >= cosHalfFOV;
+
+        if (Vector3.Dot(direction, camera.transform.forward) < cosHalfFOV) return false;
+
+        return IsScanNodeValid(node);
     }
 }
