@@ -4,6 +4,8 @@
 
 \* Fixed held items being scannable (Including enemy held items)<br>
 \* Fixed dead enemies being scannable<br>
+\* Fixed ScanNode not disappearing when picking up an item<br>
+\* Fixed Easter Egg being scannable after exploding<br>
 
 ## 1.0.0
 
