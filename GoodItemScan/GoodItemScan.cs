@@ -3,7 +3,6 @@ using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 using UnityEngine;
-using UnityEngine.InputSystem.Utilities;
 
 namespace GoodItemScan;
 
@@ -27,7 +26,7 @@ public class GoodItemScan : BaseUnityPlugin {
     }
 
     internal static void Patch() {
-        Harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
+        Harmony ??= new(MyPluginInfo.PLUGIN_GUID);
 
         LogDebug("Patching...");
 

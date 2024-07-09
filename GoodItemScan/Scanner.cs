@@ -75,16 +75,20 @@ public static class Scanner {
 
         if (parent is null) return false;
 
-        var grabbableObject = parent.GetComponent<GrabbableObject>();
+        var foundGrabbableObject = parent.TryGetComponent<GrabbableObject>(out var grabbableObject);
+        if (foundGrabbableObject && (grabbableObject.isHeld || grabbableObject.isHeldByEnemy || grabbableObject.deactivated)) return false;
 
-        if ((grabbableObject?.isHeld ?? false)
-         || (grabbableObject?.isHeldByEnemy ?? false)
-         || (grabbableObject?.deactivated ?? false)) return false;
+        var foundEnemyAI = parent.TryGetComponent<EnemyAI>(out var enemyAI);
+        if (foundEnemyAI && enemyAI.isEnemyDead) return false;
 
-        var enemyAI = parent.GetComponent<EnemyAI>();
+        if (ConfigManager.showOpenedBlastDoorScanNode.Value) return true;
 
-        return !(enemyAI?.isEnemyDead ?? false);
+        var foundAccessibleObject = parent.TryGetComponent<TerminalAccessibleObject>(out var terminalAccessibleObject);
+        if (!foundAccessibleObject) return true;
+
+        return !terminalAccessibleObject.isBigDoor || !terminalAccessibleObject.isDoorOpen;
     }
+
 
     private static IEnumerator AddScanNodeToUI(ScanNodeProperties scanNodeProperties, long currentScanNodeCount) {
         yield return new WaitForSeconds((ConfigManager.scanNodeDelay.Value / 100F) * currentScanNodeCount);

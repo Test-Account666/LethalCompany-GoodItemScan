@@ -10,6 +10,8 @@ public static class ConfigManager {
 
     public static ConfigEntry<bool> sendDebugMessages = null!;
 
+    public static ConfigEntry<bool> showOpenedBlastDoorScanNode = null!;
+
     internal static void Initialize(ConfigFile configFile) {
         preferClosestNodes = configFile.Bind("General", "Prefer Closest Nodes", true,
                                              "If true, will prefer scanning the closest nodes first. "
@@ -28,5 +30,9 @@ public static class ConfigManager {
 
         sendDebugMessages = configFile.Bind("Debug", "Send Debug Messages", false,
                                             "If set to true, will spam your log with debug messages.");
+
+        showOpenedBlastDoorScanNode = configFile.Bind("Special Cases", "Show opened blast door scan node", true,
+                                                      "If set to true, will allow you to scan nodes of opened blast doors (Vanilla value: false) "
+                                                    + "Enabling this could improve performance.");
     }
 }
