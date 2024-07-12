@@ -17,6 +17,14 @@ public static class Scanner {
 
         if (!hudManager.CanPlayerScan() || hudManager.playerPingingScan > -1.0) return;
 
+        if (ConfigManager.alwaysRescan.Value) {
+            hudManager.DisableAllScanElements();
+            hudManager.scanNodes.Clear();
+            hudManager.scannedScrapNum = 0;
+            hudManager.totalScrapScanned = 0;
+            hudManager.totalScrapScannedDisplayNum = 0;
+        }
+
         hudManager.playerPingingScan = 0.3f;
         hudManager.scanEffectAnimator.transform.position = localPlayer.gameplayCamera.transform.position;
         hudManager.scanEffectAnimator.SetTrigger(_ScanAnimatorHash);

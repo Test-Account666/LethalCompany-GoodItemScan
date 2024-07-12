@@ -4,6 +4,7 @@ namespace GoodItemScan;
 
 public static class ConfigManager {
     public static ConfigEntry<bool> preferClosestNodes = null!;
+    public static ConfigEntry<bool> alwaysRescan = null!;
 
     public static ConfigEntry<int> scanNodesHardLimit = null!;
     public static ConfigEntry<float> scanNodeDelay = null!;
@@ -12,10 +13,14 @@ public static class ConfigManager {
 
     public static ConfigEntry<bool> showOpenedBlastDoorScanNode = null!;
 
+
     internal static void Initialize(ConfigFile configFile) {
         preferClosestNodes = configFile.Bind("General", "Prefer Closest Nodes", true,
                                              "If true, will prefer scanning the closest nodes first. "
                                            + "This might cause performance issues.");
+        alwaysRescan = configFile.Bind("General", "Always Rescan", true,
+                                       "If true, will always start a fresh scan. "
+                                     + "This removes all previously scanned nodes from the UI.");
 
         scanNodesHardLimit = configFile.Bind("General", "Scan Nodes Hard Limit", 666,
                                              new ConfigDescription("Defines the maximum amount of scan nodes on screen. "
