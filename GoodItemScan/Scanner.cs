@@ -24,7 +24,7 @@ public static class Scanner {
             hudManager.totalScrapScanned = 0;
             hudManager.totalScrapScannedDisplayNum = 0;
         }
-        
+
         hudManager.totalValueText.text = "$0";
 
         hudManager.playerPingingScan = 0.3f;
@@ -123,18 +123,22 @@ public static class Scanner {
         if (!node.gameObject.activeSelf) return false;
 
         var localPlayer = StartOfRound.Instance.localPlayerController;
-
         if (localPlayer is null) return false;
 
         var camera = localPlayer.gameplayCamera;
+        var aspectRatio = camera.aspect;
 
         var direction = node.transform.position - camera.transform.position;
-
         direction.Normalize();
 
-        var cosHalfFOV = Mathf.Cos(camera.fieldOfView * 0.6f * Mathf.Deg2Rad);
+        // This multiplier exists to move the scannable range even closer to the screen's border.
+        // Haven't tested this on anything else than 4:3 and 16:9
+        var multiplier = 0.5f + aspectRatio / 100;
 
-        if (Vector3.Dot(direction, camera.transform.forward) < cosHalfFOV) return false;
+        var adjustedFOV = Mathf.Atan(Mathf.Tan(camera.fieldOfView * multiplier * Mathf.Deg2Rad) / aspectRatio) * Mathf.Rad2Deg * 2;
+        var cosHalfAdjustedFOV = Mathf.Cos(adjustedFOV * Mathf.Deg2Rad);
+
+        if (Vector3.Dot(direction, camera.transform.forward) < cosHalfAdjustedFOV) return false;
 
         return IsScanNodeValid(node);
     }
