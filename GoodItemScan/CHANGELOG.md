@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.2.1
+
+\* Fixed fov calculation<br>
+
 ## 1.2.0
 
 \+ Added config option to always force a rescan<br>
