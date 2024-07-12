@@ -24,6 +24,8 @@ public static class Scanner {
             hudManager.totalScrapScanned = 0;
             hudManager.totalScrapScannedDisplayNum = 0;
         }
+        
+        hudManager.totalValueText.text = "$0";
 
         hudManager.playerPingingScan = 0.3f;
         hudManager.scanEffectAnimator.transform.position = localPlayer.gameplayCamera.transform.position;
