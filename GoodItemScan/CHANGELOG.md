@@ -1,5 +1,10 @@
 # Good Item Scan Mod
 
+## 1.2.0
+
+\+ Added config option to always force a rescan<br>
+\* Fixed total scan value persisting<br>
+
 ## 1.1.0
 
 \+ Added config option for scanning opened blast doors<br>
