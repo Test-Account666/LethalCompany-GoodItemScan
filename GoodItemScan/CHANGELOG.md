@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.2.2
+
+\# Performance Update. Hopefully this actually does things.<br>
+
 ## 1.2.1
 
 \* Fixed fov calculation<br>
