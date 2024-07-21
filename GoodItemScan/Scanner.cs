@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -34,12 +35,13 @@ public static class Scanner {
 
         GoodItemScan.LogDebug("Scan Initiated!");
 
-        var scanNodes = Object.FindObjectsOfType<ScanNodeProperties>(false);
+        var scanNodes = Object.FindObjectsByType<ScanNodeProperties>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
         scanNodes ??= [
         ];
 
         GoodItemScan.LogDebug($"Got '{scanNodes.Length}' nodes!");
+        GoodItemScan.LogDebug($"'Got {_ComponentCache.Count} nodes in cache'!");
 
         var currentScanNodeCount = 0L;
 
@@ -60,8 +62,9 @@ public static class Scanner {
             if (distance < scanNodeProperties.minRange) continue;
 
             if (scanNodeProperties.requiresLineOfSight) {
-                var isLineOfSightBlocked = Physics.Linecast(localPlayer.gameplayCamera.transform.position, scanNodePosition, 256,
-                                                            QueryTriggerInteraction.Ignore);
+                var cameraPosition = localPlayer.gameplayCamera.transform.position;
+
+                var isLineOfSightBlocked = Physics.Linecast(cameraPosition, scanNodePosition, 256, QueryTriggerInteraction.Ignore);
 
                 if (isLineOfSightBlocked) continue;
             }
@@ -80,28 +83,65 @@ public static class Scanner {
         }
     }
 
+    private static bool IsScanNodeValid(GrabbableObject? grabbableObject, EnemyAI? enemyAI,
+                                        TerminalAccessibleObject? terminalAccessibleObject) {
+        if (grabbableObject is not null
+         && (grabbableObject.isHeld || grabbableObject.isHeldByEnemy || grabbableObject.deactivated)) return false;
+
+        if (enemyAI is {
+                isEnemyDead: true,
+            }) return false;
+
+        if (ConfigManager.showOpenedBlastDoorScanNode.Value) return true;
+
+        return terminalAccessibleObject is not {
+            isBigDoor: true, isDoorOpen: true,
+        };
+    }
+
+    private static readonly Dictionary<Transform, (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?)> _ComponentCache = [
+    ];
+
     private static bool IsScanNodeValid(ScanNodeProperties scanNodeProperties) {
         var parent = scanNodeProperties.transform.parent;
 
         if (parent is null) return false;
 
-        var foundGrabbableObject = parent.TryGetComponent<GrabbableObject>(out var grabbableObject);
-        if (foundGrabbableObject && (grabbableObject.isHeld || grabbableObject.isHeldByEnemy || grabbableObject.deactivated)) return false;
+        GetComponents(parent, out var cachedComponents);
 
-        var foundEnemyAI = parent.TryGetComponent<EnemyAI>(out var enemyAI);
-        if (foundEnemyAI && enemyAI.isEnemyDead) return false;
+        var (grabbableObject, enemyAI, terminalAccessibleObject) = cachedComponents;
 
-        if (ConfigManager.showOpenedBlastDoorScanNode.Value) return true;
+        return IsScanNodeValid(grabbableObject, enemyAI, terminalAccessibleObject);
+    }
 
-        var foundAccessibleObject = parent.TryGetComponent<TerminalAccessibleObject>(out var terminalAccessibleObject);
-        if (!foundAccessibleObject) return true;
+    private static void GetComponents(Transform parent,
+                                      out (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?) cachedComponents) {
+        if (!ConfigManager.useDictionaryCache.Value) {
+            GetUncachedComponents(parent, out cachedComponents);
+            return;
+        }
 
-        return !terminalAccessibleObject.isBigDoor || !terminalAccessibleObject.isDoorOpen;
+        if (_ComponentCache.TryGetValue(parent, out cachedComponents)) return;
+
+        GetUncachedComponents(parent, out cachedComponents);
+        _ComponentCache[parent] = cachedComponents;
+    }
+
+    private static void GetUncachedComponents(Transform parent,
+                                              out (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?) cachedComponents) {
+        var grabbableObjectFound = parent.TryGetComponent<GrabbableObject>(out var grabbableObject);
+        var enemyAIFound = parent.TryGetComponent<EnemyAI>(out var enemyAI);
+        var terminalAccessibleObjectFound = parent.TryGetComponent<TerminalAccessibleObject>(out var terminalAccessibleObject);
+
+        cachedComponents = (grabbableObjectFound? grabbableObject : null,
+                            enemyAIFound? enemyAI : null,
+                            terminalAccessibleObjectFound? terminalAccessibleObject : null);
     }
 
 
     private static IEnumerator AddScanNodeToUI(ScanNodeProperties scanNodeProperties, long currentScanNodeCount) {
         yield return new WaitForSeconds((ConfigManager.scanNodeDelay.Value / 100F) * currentScanNodeCount);
+        yield return new WaitForEndOfFrame();
 
         var localPlayer = StartOfRound.Instance.localPlayerController;
 
@@ -126,20 +166,35 @@ public static class Scanner {
         if (localPlayer is null) return false;
 
         var camera = localPlayer.gameplayCamera;
-        var aspectRatio = camera.aspect;
 
         var direction = node.transform.position - camera.transform.position;
         direction.Normalize();
+
+        var cosHalfAdjustedFOV = GetCosHalfAdjustedFov(camera);
+
+        if (Vector3.Dot(direction, camera.transform.forward) < cosHalfAdjustedFOV) return false;
+
+        return IsScanNodeValid(node);
+    }
+
+    // I don't think we actually need a dictionary as cache, but just to be sure...
+    private static readonly Dictionary<Camera, float> _CachedFovValues = [
+    ];
+
+    private static float GetCosHalfAdjustedFov(Camera camera) {
+        if (_CachedFovValues.TryGetValue(camera, out var cosHalfAdjustedFOV)) return cosHalfAdjustedFOV;
+
+        var aspectRatio = camera.aspect;
 
         // This multiplier exists to move the scannable range even closer to the screen's border.
         // Haven't tested this on anything else than 4:3 and 16:9
         var multiplier = 0.5f + aspectRatio / 100;
 
         var adjustedFOV = Mathf.Atan(Mathf.Tan(camera.fieldOfView * multiplier * Mathf.Deg2Rad) / aspectRatio) * Mathf.Rad2Deg * 2;
-        var cosHalfAdjustedFOV = Mathf.Cos(adjustedFOV * Mathf.Deg2Rad);
+        cosHalfAdjustedFOV = Mathf.Cos(adjustedFOV * Mathf.Deg2Rad);
 
-        if (Vector3.Dot(direction, camera.transform.forward) < cosHalfAdjustedFOV) return false;
+        _CachedFovValues[camera] = cosHalfAdjustedFOV;
 
-        return IsScanNodeValid(node);
+        return cosHalfAdjustedFOV;
     }
 }

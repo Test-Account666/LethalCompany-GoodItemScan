@@ -9,6 +9,8 @@ public static class ConfigManager {
     public static ConfigEntry<int> scanNodesHardLimit = null!;
     public static ConfigEntry<float> scanNodeDelay = null!;
 
+    public static ConfigEntry<bool> useDictionaryCache = null!;
+
     public static ConfigEntry<bool> sendDebugMessages = null!;
 
     public static ConfigEntry<bool> showOpenedBlastDoorScanNode = null!;
@@ -32,6 +34,11 @@ public static class ConfigManager {
                                                             + "This will look stupid if set too high. "
                                                             + "This value is divided by 100.",
                                                               new AcceptableValueRange<float>(0, 1F)));
+
+        useDictionaryCache = configFile.Bind("General", "Use Dictionary Cache", true,
+                                             "May increase performance, at the cost of ram usage. "
+                                           + "If true, will use a dictionary for caching. "
+                                           + "If false, will not cache at all.");
 
         sendDebugMessages = configFile.Bind("Debug", "Send Debug Messages", false,
                                             "If set to true, will spam your log with debug messages.");
