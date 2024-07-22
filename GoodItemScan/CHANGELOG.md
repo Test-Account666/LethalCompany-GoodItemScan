@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.2.4
+
+\# Replaced closest point LOS check with corner LOS check - All scrap should now be scannable<br>
+
 ## 1.2.3
 
 \+ Added config option to always check for LOS<br>
