@@ -94,13 +94,23 @@ public static class Scanner {
         }
 
         var cameraPosition = localPlayer.gameplayCamera.transform.position;
-        var closestPoint = boxCollider.ClosestPoint(cameraPosition);
 
-        if (!boxCollider.bounds.Contains(closestPoint)) return false;
+        var minPosition = boxCollider.bounds.min;
 
-        var isLineOfSightBlocked = Physics.Linecast(cameraPosition, closestPoint, 256, QueryTriggerInteraction.Ignore);
+        var maxPosition = boxCollider.bounds.max;
 
-        return !isLineOfSightBlocked;
+        var corners = new Vector3[8];
+        corners[0] = maxPosition;
+        corners[1] = new(maxPosition.x, maxPosition.y, minPosition.z);
+        corners[2] = new(maxPosition.x, minPosition.y, maxPosition.z);
+        corners[3] = new(maxPosition.x, minPosition.y, minPosition.z);
+        corners[4] = new(minPosition.x, maxPosition.y, maxPosition.z);
+        corners[5] = new(minPosition.x, maxPosition.y, minPosition.z);
+        corners[6] = new(minPosition.x, minPosition.y, maxPosition.z);
+        corners[7] = minPosition;
+
+        return corners.Select(corner => !Physics.Linecast(cameraPosition, corner, 256, QueryTriggerInteraction.Ignore))
+                      .Any(isInLineOfSight => isInLineOfSight);
     }
 
     private static bool IsScanNodeValid(GrabbableObject? grabbableObject, EnemyAI? enemyAI,
