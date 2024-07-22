@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using GameNetcodeStuff;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -61,23 +62,7 @@ public static class Scanner {
 
             if (distance < scanNodeProperties.minRange) continue;
 
-            if (scanNodeProperties.requiresLineOfSight) {
-                var hasBoxCollider = scanNodeProperties.TryGetComponent<BoxCollider>(out var boxCollider);
-
-                if (!hasBoxCollider) {
-                    GoodItemScan.Logger.LogError($"{scanNodeProperties.headerText} has no BoxCollider!");
-                    continue;
-                }
-
-                var cameraPosition = localPlayer.gameplayCamera.transform.position;
-                var closestPoint = boxCollider.ClosestPoint(cameraPosition);
-
-                if (!boxCollider.bounds.Contains(closestPoint)) continue;
-
-                var isLineOfSightBlocked = Physics.Linecast(cameraPosition, closestPoint, 256, QueryTriggerInteraction.Ignore);
-
-                if (isLineOfSightBlocked) continue;
-            }
+            if (!HasLineOfSight(scanNodeProperties, localPlayer)) continue;
 
             if (!IsScanNodeValid(scanNodeProperties)) continue;
 
@@ -91,6 +76,31 @@ public static class Scanner {
 
             localPlayer.StartCoroutine(AddScanNodeToUI(scanNodeProperties, currentScanNodeCount));
         }
+    }
+
+    private static bool HasLineOfSight(ScanNodeProperties scanNodeProperties, PlayerControllerB localPlayer) {
+        if (!scanNodeProperties.requiresLineOfSight) return true;
+
+        var hasBoxCollider = scanNodeProperties.TryGetComponent<BoxCollider>(out var boxCollider);
+
+        if (!hasBoxCollider) {
+            GoodItemScan.Logger.LogError($"{scanNodeProperties.headerText} has no BoxCollider!");
+
+            if (!ConfigManager.addBoxCollidersToInvalidScanNodes.Value) return false;
+
+            GoodItemScan.Logger.LogError("Adding a BoxCollider!");
+
+            boxCollider = scanNodeProperties.gameObject.AddComponent<BoxCollider>();
+        }
+
+        var cameraPosition = localPlayer.gameplayCamera.transform.position;
+        var closestPoint = boxCollider.ClosestPoint(cameraPosition);
+
+        if (!boxCollider.bounds.Contains(closestPoint)) return false;
+
+        var isLineOfSightBlocked = Physics.Linecast(cameraPosition, closestPoint, 256, QueryTriggerInteraction.Ignore);
+
+        return !isLineOfSightBlocked;
     }
 
     private static bool IsScanNodeValid(GrabbableObject? grabbableObject, EnemyAI? enemyAI,
@@ -184,7 +194,9 @@ public static class Scanner {
 
         if (Vector3.Dot(direction, camera.transform.forward) < cosHalfAdjustedFOV) return false;
 
-        return IsScanNodeValid(node);
+        if (!IsScanNodeValid(node)) return false;
+
+        return !ConfigManager.alwaysCheckForLineOfSight.Value || HasLineOfSight(node, localPlayer);
     }
 
     // I don't think we actually need a dictionary as cache, but just to be sure...

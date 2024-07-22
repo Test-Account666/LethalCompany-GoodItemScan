@@ -11,15 +11,20 @@ public static class ConfigManager {
 
     public static ConfigEntry<bool> useDictionaryCache = null!;
 
+    public static ConfigEntry<bool> alwaysCheckForLineOfSight = null!;
+
     public static ConfigEntry<bool> sendDebugMessages = null!;
 
     public static ConfigEntry<bool> showOpenedBlastDoorScanNode = null!;
+
+    public static ConfigEntry<bool> addBoxCollidersToInvalidScanNodes = null!;
 
 
     internal static void Initialize(ConfigFile configFile) {
         preferClosestNodes = configFile.Bind("General", "Prefer Closest Nodes", true,
                                              "If true, will prefer scanning the closest nodes first. "
                                            + "This might cause performance issues.");
+
         alwaysRescan = configFile.Bind("General", "Always Rescan", true,
                                        "If true, will always start a fresh scan. "
                                      + "This removes all previously scanned nodes from the UI.");
@@ -40,11 +45,20 @@ public static class ConfigManager {
                                            + "If true, will use a dictionary for caching. "
                                            + "If false, will not cache at all.");
 
+        alwaysCheckForLineOfSight = configFile.Bind("General", "Always Check For Line Of Sight", false,
+                                                    "If true, will check for line of sight every frame. "
+                                                  + "Enabling this could cause performance issues. Vanilla value is true.");
+
         sendDebugMessages = configFile.Bind("Debug", "Send Debug Messages", false,
                                             "If set to true, will spam your log with debug messages.");
 
         showOpenedBlastDoorScanNode = configFile.Bind("Special Cases", "Show opened blast door scan node", true,
                                                       "If set to true, will allow you to scan nodes of opened blast doors (Vanilla value: false) "
                                                     + "Enabling this could improve performance.");
+
+        addBoxCollidersToInvalidScanNodes = configFile.Bind("Special Cases", "Add BoxColliders To Invalid Scan Nodes", false,
+                                                            "If true, will add BoxColliers to ScanNodes that do not have one. "
+                                                          + "It is not recommended to enable this. "
+                                                          + "This feature was also never tested, so it might not even work.");
     }
 }
