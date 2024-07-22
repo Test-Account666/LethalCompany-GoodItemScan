@@ -62,9 +62,19 @@ public static class Scanner {
             if (distance < scanNodeProperties.minRange) continue;
 
             if (scanNodeProperties.requiresLineOfSight) {
-                var cameraPosition = localPlayer.gameplayCamera.transform.position;
+                var hasBoxCollider = scanNodeProperties.TryGetComponent<BoxCollider>(out var boxCollider);
 
-                var isLineOfSightBlocked = Physics.Linecast(cameraPosition, scanNodePosition, 256, QueryTriggerInteraction.Ignore);
+                if (!hasBoxCollider) {
+                    GoodItemScan.Logger.LogError($"{scanNodeProperties.headerText} has no BoxCollider!");
+                    continue;
+                }
+
+                var cameraPosition = localPlayer.gameplayCamera.transform.position;
+                var closestPoint = boxCollider.ClosestPoint(cameraPosition);
+
+                if (!boxCollider.bounds.Contains(closestPoint)) continue;
+
+                var isLineOfSightBlocked = Physics.Linecast(cameraPosition, closestPoint, 256, QueryTriggerInteraction.Ignore);
 
                 if (isLineOfSightBlocked) continue;
             }
