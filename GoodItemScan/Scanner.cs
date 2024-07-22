@@ -41,7 +41,7 @@ public static class Scanner {
         ];
 
         GoodItemScan.LogDebug($"Got '{scanNodes.Length}' nodes!");
-        GoodItemScan.LogDebug($"'Got {_ComponentCache.Count} nodes in cache'!");
+        GoodItemScan.LogDebug($"Got '{_ComponentCache.Count}' nodes in cache!");
 
         var currentScanNodeCount = 0L;
 
