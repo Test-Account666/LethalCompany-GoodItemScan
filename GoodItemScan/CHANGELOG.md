@@ -2,6 +2,7 @@
 
 ## 1.2.3
 
+\+ Added config option to always check for LOS<br>
 \# Improved LOS check. Should now be way more reliable and support weird ScanNode sizes and locations<br>
 
 ## 1.2.2
