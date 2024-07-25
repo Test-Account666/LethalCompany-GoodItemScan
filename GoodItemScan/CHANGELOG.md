@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.3.0
+
+\+ Added config option to limit how many scan nodes will be scanned each frame<br>
+
 ## 1.2.4
 
 \# Replaced closest point LOS check with corner LOS check - All scrap should now be scannable<br>
