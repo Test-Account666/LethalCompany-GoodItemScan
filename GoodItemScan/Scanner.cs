@@ -9,6 +9,7 @@ namespace GoodItemScan;
 
 public static class Scanner {
     private static readonly int _ScanAnimatorHash = Animator.StringToHash("scan");
+    private static Coroutine? _scanCoroutine;
 
     public static void Scan() {
         var localPlayer = StartOfRound.Instance.localPlayerController;
@@ -18,6 +19,8 @@ public static class Scanner {
         var hudManager = HUDManager.Instance;
 
         if (!hudManager.CanPlayerScan() || hudManager.playerPingingScan > -1.0) return;
+
+        if (_scanCoroutine is not null) hudManager.StopCoroutine(_scanCoroutine);
 
         if (ConfigManager.alwaysRescan.Value) {
             hudManager.DisableAllScanElements();
@@ -38,20 +41,35 @@ public static class Scanner {
 
         var scanNodes = Object.FindObjectsByType<ScanNodeProperties>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
-        scanNodes ??= [
-        ];
-
         GoodItemScan.LogDebug($"Got '{scanNodes.Length}' nodes!");
         GoodItemScan.LogDebug($"Got '{_ComponentCache.Count}' nodes in cache!");
+
+        _scanCoroutine = hudManager.StartCoroutine(ScanNodes(localPlayer, scanNodes));
+    }
+
+    private static IEnumerator ScanNodes(PlayerControllerB localPlayer, ScanNodeProperties?[] scanNodes) {
+        yield return new WaitForEndOfFrame();
 
         var currentScanNodeCount = 0L;
 
         var playerLocation = localPlayer.transform.position;
 
+        var processedNodesThisFrame = 0;
+
         if (ConfigManager.preferClosestNodes.Value)
-            scanNodes = scanNodes.OrderBy(node => Vector3.Distance(playerLocation, node.transform.position)).ToArray();
+            scanNodes = scanNodes.Where(node => node is not null).Select(node => node!)
+                                 .OrderBy(node => Vector3.Distance(playerLocation, node.transform.position)).ToArray();
+
 
         foreach (var scanNodeProperties in scanNodes) {
+            if (processedNodesThisFrame >= ConfigManager.maxScanNodesToProcessPerFrame.Value) {
+                yield return null;
+                yield return new WaitForEndOfFrame();
+                processedNodesThisFrame = 0;
+            }
+
+            processedNodesThisFrame += 1;
+
             if (scanNodeProperties is null) continue;
 
             var scanNodePosition = scanNodeProperties.transform.position;
@@ -66,12 +84,11 @@ public static class Scanner {
 
             if (!IsScanNodeValid(scanNodeProperties)) continue;
 
-
             currentScanNodeCount += 1;
 
             if (currentScanNodeCount > ConfigManager.scanNodesHardLimit.Value) {
                 GoodItemScan.LogDebug($"Hard Limit of {ConfigManager.scanNodesHardLimit.Value} reached!");
-                return;
+                yield break;
             }
 
             localPlayer.StartCoroutine(AddScanNodeToUI(scanNodeProperties, currentScanNodeCount));
@@ -81,17 +98,9 @@ public static class Scanner {
     private static bool HasLineOfSight(ScanNodeProperties scanNodeProperties, PlayerControllerB localPlayer) {
         if (!scanNodeProperties.requiresLineOfSight) return true;
 
-        var hasBoxCollider = scanNodeProperties.TryGetComponent<BoxCollider>(out var boxCollider);
+        var hasBoxCollider = TryGetOrAddBoxCollider(scanNodeProperties, out var boxCollider);
 
-        if (!hasBoxCollider) {
-            GoodItemScan.Logger.LogError($"{scanNodeProperties.headerText} has no BoxCollider!");
-
-            if (!ConfigManager.addBoxCollidersToInvalidScanNodes.Value) return false;
-
-            GoodItemScan.Logger.LogError("Adding a BoxCollider!");
-
-            boxCollider = scanNodeProperties.gameObject.AddComponent<BoxCollider>();
-        }
+        if (!hasBoxCollider) return false;
 
         var cameraPosition = localPlayer.gameplayCamera.transform.position;
 
@@ -99,18 +108,26 @@ public static class Scanner {
 
         var maxPosition = boxCollider.bounds.max;
 
-        var corners = new Vector3[8];
-        corners[0] = maxPosition;
-        corners[1] = new(maxPosition.x, maxPosition.y, minPosition.z);
-        corners[2] = new(maxPosition.x, minPosition.y, maxPosition.z);
-        corners[3] = new(maxPosition.x, minPosition.y, minPosition.z);
-        corners[4] = new(minPosition.x, maxPosition.y, maxPosition.z);
-        corners[5] = new(minPosition.x, maxPosition.y, minPosition.z);
-        corners[6] = new(minPosition.x, minPosition.y, maxPosition.z);
-        corners[7] = minPosition;
+        var corners = new[] {
+            maxPosition, new(maxPosition.x, maxPosition.y, minPosition.z), new(maxPosition.x, minPosition.y, maxPosition.z),
+            new(maxPosition.x, minPosition.y, minPosition.z), new(minPosition.x, maxPosition.y, maxPosition.z),
+            new(minPosition.x, maxPosition.y, minPosition.z), new(minPosition.x, minPosition.y, maxPosition.z), minPosition,
+        };
 
-        return corners.Select(corner => !Physics.Linecast(cameraPosition, corner, 256, QueryTriggerInteraction.Ignore))
-                      .Any(isInLineOfSight => isInLineOfSight);
+        return corners.Any(corner => !Physics.Linecast(cameraPosition, corner, 256, QueryTriggerInteraction.Ignore));
+    }
+
+    private static bool TryGetOrAddBoxCollider(ScanNodeProperties scanNodeProperties, out BoxCollider boxCollider) {
+        var hasBoxCollider = scanNodeProperties.TryGetComponent(out boxCollider);
+        if (hasBoxCollider) return true;
+
+        GoodItemScan.Logger.LogError($"{scanNodeProperties.headerText} has no BoxCollider!");
+
+        if (!ConfigManager.addBoxCollidersToInvalidScanNodes.Value) return false;
+
+        GoodItemScan.Logger.LogError("Adding a BoxCollider!");
+        boxCollider = scanNodeProperties.gameObject.AddComponent<BoxCollider>();
+        return true;
     }
 
     private static bool IsScanNodeValid(GrabbableObject? grabbableObject, EnemyAI? enemyAI,
@@ -170,7 +187,7 @@ public static class Scanner {
 
 
     private static IEnumerator AddScanNodeToUI(ScanNodeProperties scanNodeProperties, long currentScanNodeCount) {
-        yield return new WaitForSeconds((ConfigManager.scanNodeDelay.Value / 100F) * currentScanNodeCount);
+        yield return new WaitForSeconds(ConfigManager.scanNodeDelay.Value / 100F * currentScanNodeCount);
         yield return new WaitForEndOfFrame();
 
         var localPlayer = StartOfRound.Instance.localPlayerController;

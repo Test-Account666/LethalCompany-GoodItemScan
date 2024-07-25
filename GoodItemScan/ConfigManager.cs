@@ -13,6 +13,8 @@ public static class ConfigManager {
 
     public static ConfigEntry<bool> alwaysCheckForLineOfSight = null!;
 
+    public static ConfigEntry<int> maxScanNodesToProcessPerFrame = null!;
+
     public static ConfigEntry<bool> sendDebugMessages = null!;
 
     public static ConfigEntry<bool> showOpenedBlastDoorScanNode = null!;
@@ -48,6 +50,11 @@ public static class ConfigManager {
         alwaysCheckForLineOfSight = configFile.Bind("General", "Always Check For Line Of Sight", false,
                                                     "If true, will check for line of sight every frame. "
                                                   + "Enabling this could cause performance issues. Vanilla value is true.");
+
+        maxScanNodesToProcessPerFrame = configFile.Bind("General", "Max Scan Nodes To Process Per Frame", 32,
+                                                        "This value defines how many scan nodes can be processed each frame."
+                                                      + "This will NOT stop updating all scan nodes at once each frame!"
+                                                      + "The more ScanNodes you have on screen, the more lag it will create!");
 
         sendDebugMessages = configFile.Bind("Debug", "Send Debug Messages", false,
                                             "If set to true, will spam your log with debug messages.");
