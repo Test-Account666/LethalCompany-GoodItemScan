@@ -52,9 +52,11 @@ public static class ConfigManager {
                                                   + "Enabling this could cause performance issues. Vanilla value is true.");
 
         maxScanNodesToProcessPerFrame = configFile.Bind("General", "Max Scan Nodes To Process Per Frame", 32,
-                                                        "This value defines how many scan nodes can be processed each frame."
-                                                      + "This will NOT stop updating all scan nodes at once each frame!"
-                                                      + "The more ScanNodes you have on screen, the more lag it will create!");
+                                                        new ConfigDescription(
+                                                            "This value defines how many scan nodes can be processed each frame."
+                                                          + "This will NOT stop updating all scan nodes at once each frame!"
+                                                          + "The more ScanNodes you have on screen, the more lag it will create!",
+                                                            new AcceptableValueRange<int>(1, 666)));
 
         sendDebugMessages = configFile.Bind("Debug", "Send Debug Messages", false,
                                             "If set to true, will spam your log with debug messages.");
