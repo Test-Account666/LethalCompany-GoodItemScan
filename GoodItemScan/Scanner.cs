@@ -406,7 +406,7 @@ public static class Scanner {
 
             hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, true);
         } catch (Exception ex) {
-            Debug.LogError($"Error in updatescannodes C: {ex}");
+            Debug.LogError($"Error in UpdateScrapTotalValue: {ex}");
         }
     }
 }
