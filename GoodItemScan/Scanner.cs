@@ -52,7 +52,7 @@ public static class Scanner {
             hudManager.totalScrapScannedDisplayNum = 0;
         }
 
-        hudManager.totalValueText.text = "$0";
+        if (hudManager.scanNodes.Count <= 0) hudManager.totalValueText.text = "$0";
 
         hudManager.playerPingingScan = 0.3f;
     }
