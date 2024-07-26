@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.4.1
+
+\* Fixed total value resetting to 0 for no reason<br>
+
 ## 1.4.0
 
 \+ Added option to hide empty subtext box<br>
