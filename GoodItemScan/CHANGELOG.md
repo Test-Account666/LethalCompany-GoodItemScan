@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.4.2
+
+\* Fixed scanner breaking by a deleted ScanNode<br>
+
 ## 1.4.1
 
 \* Fixed total value resetting to 0 for no reason<br>
