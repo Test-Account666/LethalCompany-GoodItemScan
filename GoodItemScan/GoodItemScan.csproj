@@ -5,7 +5,7 @@
         <AssemblyName>TestAccount666.GoodItemScan</AssemblyName>
         <Product>GoodItemScan</Product>
         <!-- Change to whatever version you're currently on. -->
-        <Version>1.4.0</Version>
+        <Version>1.4.1</Version>
         <Description>Yet another scan mod</Description>
         <Source>https://github.com/Test-Account666/LethalCompany-GoodItemScan/</Source>
     </PropertyGroup>
