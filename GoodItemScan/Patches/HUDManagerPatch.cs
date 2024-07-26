@@ -1,11 +1,15 @@
+using GameNetcodeStuff;
 using HarmonyLib;
-using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace GoodItemScan.Patches;
 
 [HarmonyPatch(typeof(HUDManager))]
 public static class HUDManagerPatch {
+    [HarmonyPatch(nameof(HUDManager.AssignNodeToUIElement))]
+    [HarmonyPrefix]
+    private static bool DontAssignNodeToUIElement() => false;
+
     [HarmonyPatch(nameof(HUDManager.AssignNewNodes))]
     [HarmonyPrefix]
     private static bool DontAssignNewNodes() => false;
@@ -21,29 +25,15 @@ public static class HUDManagerPatch {
     [HarmonyPatch(nameof(HUDManager.NodeIsNotVisible))]
     [HarmonyPrefix]
     // ReSharper disable once InconsistentNaming
-    private static bool NodeIsNotVisible(ScanNodeProperties node, int elementIndex, ref bool __result) {
-        var hudManager = HUDManager.Instance;
+    private static bool NodeIsAlwaysVisible(ref bool __result) {
+        __result = false;
+        return false;
+    }
 
-        var scanElement = hudManager?.scanElements[elementIndex];
-
-        if (hudManager is null || scanElement is null) return false;
-
-        var localPlayer = StartOfRound.Instance.localPlayerController;
-
-        if (localPlayer is null) return false;
-
-        if (Scanner.IsScanNodeVisible(node)) {
-            __result = false;
-            return false;
-        }
-
-
-        if (node.nodeType == 2) hudManager.totalScrapScanned = Mathf.Clamp(hudManager.totalScrapScanned - node.scrapValue, 0, 100000);
-
-        scanElement.gameObject.SetActive(false);
-        hudManager.scanNodes.Remove(scanElement);
-
-        __result = true;
+    [HarmonyPatch(nameof(HUDManager.UpdateScanNodes))]
+    [HarmonyPrefix]
+    private static bool UpdateScanNodes(PlayerControllerB playerScript) {
+        Scanner.UpdateScanNodes(playerScript);
         return false;
     }
 

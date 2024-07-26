@@ -21,6 +21,8 @@ public static class ConfigManager {
 
     public static ConfigEntry<bool> addBoxCollidersToInvalidScanNodes = null!;
 
+    public static ConfigEntry<bool> hideEmptyScanNodeSubText = null!;
+
 
     internal static void Initialize(ConfigFile configFile) {
         preferClosestNodes = configFile.Bind("General", "Prefer Closest Nodes", true,
@@ -52,11 +54,9 @@ public static class ConfigManager {
                                                   + "Enabling this could cause performance issues. Vanilla value is true.");
 
         maxScanNodesToProcessPerFrame = configFile.Bind("General", "Max Scan Nodes To Process Per Frame", 32,
-                                                        new ConfigDescription(
-                                                            "This value defines how many scan nodes can be processed each frame."
-                                                          + "This will NOT stop updating all scan nodes at once each frame!"
-                                                          + "The more ScanNodes you have on screen, the more lag it will create!",
-                                                            new AcceptableValueRange<int>(1, 666)));
+                                                        new ConfigDescription("This value defines how many scan nodes can be processed each frame."
+                                                                            + "This value is used in updating and scanning nodes!",
+                                                                              new AcceptableValueRange<int>(1, 666)));
 
         sendDebugMessages = configFile.Bind("Debug", "Send Debug Messages", false,
                                             "If set to true, will spam your log with debug messages.");
@@ -69,5 +69,8 @@ public static class ConfigManager {
                                                             "If true, will add BoxColliers to ScanNodes that do not have one. "
                                                           + "It is not recommended to enable this. "
                                                           + "This feature was also never tested, so it might not even work.");
+
+        hideEmptyScanNodeSubText = configFile.Bind("Special Cases", "Hide Empty Scan Node Sub Text", true,
+                                                   "I true, will hide the rectangle beneath the item name, if there's no text to be displayed");
     }
 }

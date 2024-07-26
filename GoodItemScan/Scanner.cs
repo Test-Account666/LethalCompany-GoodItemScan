@@ -1,15 +1,20 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using GameNetcodeStuff;
+using TMPro;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace GoodItemScan;
 
 public static class Scanner {
+    private static readonly int _ColorNumberAnimatorHash = Animator.StringToHash("colorNumber");
+    private static readonly int _DisplayAnimatorHash = Animator.StringToHash("display");
     private static readonly int _ScanAnimatorHash = Animator.StringToHash("scan");
     private static Coroutine? _scanCoroutine;
+    private static Coroutine? _nodeVisibilityCheckCoroutine;
 
     public static void Scan() {
         var localPlayer = StartOfRound.Instance.localPlayerController;
@@ -20,6 +25,23 @@ public static class Scanner {
 
         if (!hudManager.CanPlayerScan() || hudManager.playerPingingScan > -1.0) return;
 
+        ResetScanState(hudManager);
+
+        hudManager.scanEffectAnimator.transform.position = localPlayer.gameplayCamera.transform.position;
+        hudManager.scanEffectAnimator.SetTrigger(_ScanAnimatorHash);
+        hudManager.UIAudio.PlayOneShot(hudManager.scanSFX);
+
+        GoodItemScan.LogDebug("Scan Initiated!");
+
+        var scanNodes = Object.FindObjectsByType<ScanNodeProperties>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        GoodItemScan.LogDebug($"Got '{scanNodes.Length}' nodes!");
+        GoodItemScan.LogDebug($"Got '{_ComponentCache.Count}' nodes in cache!");
+
+        _scanCoroutine = hudManager.StartCoroutine(ScanNodes(localPlayer, scanNodes));
+    }
+
+    private static void ResetScanState(HUDManager hudManager) {
         if (_scanCoroutine is not null) hudManager.StopCoroutine(_scanCoroutine);
 
         if (ConfigManager.alwaysRescan.Value) {
@@ -33,18 +55,6 @@ public static class Scanner {
         hudManager.totalValueText.text = "$0";
 
         hudManager.playerPingingScan = 0.3f;
-        hudManager.scanEffectAnimator.transform.position = localPlayer.gameplayCamera.transform.position;
-        hudManager.scanEffectAnimator.SetTrigger(_ScanAnimatorHash);
-        hudManager.UIAudio.PlayOneShot(hudManager.scanSFX);
-
-        GoodItemScan.LogDebug("Scan Initiated!");
-
-        var scanNodes = Object.FindObjectsByType<ScanNodeProperties>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-
-        GoodItemScan.LogDebug($"Got '{scanNodes.Length}' nodes!");
-        GoodItemScan.LogDebug($"Got '{_ComponentCache.Count}' nodes in cache!");
-
-        _scanCoroutine = hudManager.StartCoroutine(ScanNodes(localPlayer, scanNodes));
     }
 
     private static IEnumerator ScanNodes(PlayerControllerB localPlayer, ScanNodeProperties?[] scanNodes) {
@@ -79,6 +89,8 @@ public static class Scanner {
             if (distance > scanNodeProperties.maxRange) continue;
 
             if (distance < scanNodeProperties.minRange) continue;
+
+            if (!IsScanNodeOnScreen(scanNodeProperties)) continue;
 
             if (!HasLineOfSight(scanNodeProperties, localPlayer)) continue;
 
@@ -203,10 +215,50 @@ public static class Scanner {
         if (scanNodeProperties.nodeType == 2) ++hudManager.scannedScrapNum;
         if (!hudManager.nodesOnScreen.Contains(scanNodeProperties)) hudManager.nodesOnScreen.Add(scanNodeProperties);
 
-        hudManager.AssignNodeToUIElement(scanNodeProperties);
+        var elementIndex = AssignNodeToUIElement(scanNodeProperties);
+
+        if (elementIndex == -1) yield break;
+
+        ActivateScanElement(hudManager, elementIndex, scanNodeProperties);
+    }
+
+    public static int AssignNodeToUIElement(ScanNodeProperties node) {
+        var hudManager = HUDManager.Instance;
+
+        if (hudManager == null) return -1;
+
+        hudManager.AssignNodeToUIElement(node);
+
+        if (hudManager.scanNodes.ContainsValue(node)) return -1;
+
+        var elementIndex = -1;
+
+        for (var index = 0; index < hudManager.scanElements.Length; ++index) {
+            if (!hudManager.scanNodes.TryAdd(hudManager.scanElements[index], node)) continue;
+
+            elementIndex = index;
+
+            if (node.nodeType != 2) break;
+
+            hudManager.totalScrapScanned += node.scrapValue;
+            hudManager.addedToScrapCounterThisFrame = true;
+            break;
+        }
+
+        return elementIndex;
     }
 
     public static bool IsScanNodeVisible(ScanNodeProperties node) {
+        if (!IsScanNodeOnScreen(node)) return false;
+
+        if (!IsScanNodeValid(node)) return false;
+
+        var localPlayer = StartOfRound.Instance.localPlayerController;
+
+        return !ConfigManager.alwaysCheckForLineOfSight.Value || HasLineOfSight(node, localPlayer);
+    }
+
+    public static bool IsScanNodeOnScreen(ScanNodeProperties node) {
         if (!node.gameObject.activeSelf) return false;
 
         var localPlayer = StartOfRound.Instance.localPlayerController;
@@ -219,11 +271,7 @@ public static class Scanner {
 
         var cosHalfAdjustedFOV = GetCosHalfAdjustedFov(camera);
 
-        if (Vector3.Dot(direction, camera.transform.forward) < cosHalfAdjustedFOV) return false;
-
-        if (!IsScanNodeValid(node)) return false;
-
-        return !ConfigManager.alwaysCheckForLineOfSight.Value || HasLineOfSight(node, localPlayer);
+        return Vector3.Dot(direction, camera.transform.forward) >= cosHalfAdjustedFOV;
     }
 
     // I don't think we actually need a dictionary as cache, but just to be sure...
@@ -245,5 +293,120 @@ public static class Scanner {
         _CachedFovValues[camera] = cosHalfAdjustedFOV;
 
         return cosHalfAdjustedFOV;
+    }
+
+    public static void UpdateScanNodes(PlayerControllerB playerScript) {
+        var hudManager = HUDManager.Instance;
+        if (hudManager == null) return;
+
+        var updatingThisFrame = _nodeVisibilityCheckCoroutine is null;
+
+        var scanNodesToUpdate = new HashSet<(ScanNodeProperties, RectTransform)>();
+
+        foreach (var scanElement in hudManager.scanElements) {
+            var foundNode = hudManager.scanNodes.TryGetValue(scanElement, out var node);
+
+            if (hudManager.scanNodes.Count <= 0 || !foundNode) {
+                HandleMissingNode(hudManager, scanElement, foundNode, node);
+                continue;
+            }
+
+            if (node == null) continue;
+
+            if (updatingThisFrame) scanNodesToUpdate.Add((node, scanElement));
+
+            try {
+                UpdateScanNodePosition(scanElement, node, playerScript);
+            } catch (Exception ex) {
+                Debug.LogError($"Error in UpdateScanNodePosition: {ex}");
+            }
+        }
+
+        UpdateScrapTotalValue(hudManager);
+
+        if (!updatingThisFrame || scanNodesToUpdate.Count <= 0) return;
+
+        _nodeVisibilityCheckCoroutine = HUDManager.Instance.StartCoroutine(UpdateScanNodes(hudManager, scanNodesToUpdate));
+    }
+
+    private static IEnumerator UpdateScanNodes(HUDManager hudManager, HashSet<(ScanNodeProperties, RectTransform)> scanNodesToUpdate) {
+        yield return new WaitForEndOfFrame();
+
+        var processedNodesThisFrame = 0;
+
+        foreach (var (node, scanElement) in scanNodesToUpdate) {
+            if (processedNodesThisFrame >= ConfigManager.maxScanNodesToProcessPerFrame.Value) {
+                yield return null;
+                yield return new WaitForEndOfFrame();
+                processedNodesThisFrame = 0;
+            }
+
+            processedNodesThisFrame += 1;
+
+            try {
+                if (IsScanNodeVisible(node)) continue;
+
+                HandleMissingNode(hudManager, scanElement, true, node);
+            } catch (Exception ex) {
+                Debug.LogError($"Error in NodeIsNotVisible: {ex}");
+            }
+        }
+
+        _nodeVisibilityCheckCoroutine = null;
+    }
+
+    private static void HandleMissingNode(HUDManager hudManager, RectTransform scanElement, bool foundNode, ScanNodeProperties? node) {
+        hudManager.scanNodes.Remove(scanElement);
+        scanElement.gameObject.SetActive(false);
+
+        if (!foundNode || node == null || node.nodeType != 2) return;
+
+        --hudManager.scannedScrapNum;
+
+        hudManager.totalScrapScanned = Mathf.Clamp(hudManager.totalScrapScanned - node.scrapValue, 0, 100000);
+    }
+
+    private static void ActivateScanElement(HUDManager hudManager, int elementIndex, ScanNodeProperties node) {
+        var scanElement = hudManager.scanElements[elementIndex];
+        if (scanElement.gameObject.activeSelf) return;
+
+        scanElement.gameObject.SetActive(true);
+
+        var hasAnimator = scanElement.TryGetComponent<Animator>(out var animator);
+        if (hasAnimator) animator.SetInteger(_ColorNumberAnimatorHash, node.nodeType);
+
+        hudManager.scanElementText = scanElement.gameObject.GetComponentsInChildren<TextMeshProUGUI>();
+        if (hudManager.scanElementText.Length > 1) {
+            hudManager.scanElementText[0].text = node.headerText;
+            hudManager.scanElementText[1].text = node.subText;
+        }
+
+        if (ConfigManager.hideEmptyScanNodeSubText.Value)
+            hudManager.scanElementText[1].transform.parent.Find("SubTextBox").gameObject.SetActive(!string.IsNullOrWhiteSpace(node.subText));
+
+        if (node.creatureScanID == -1) return;
+
+        hudManager.AttemptScanNewCreature(node.creatureScanID);
+    }
+
+    private static void UpdateScanNodePosition(RectTransform scanElement, ScanNodeProperties node, PlayerControllerB playerScript) {
+        var screenPoint = playerScript.gameplayCamera.WorldToScreenPoint(node.transform.position);
+        scanElement.anchoredPosition = new(screenPoint.x - 439.48f, screenPoint.y - 244.8f);
+    }
+
+    private static void UpdateScrapTotalValue(HUDManager hudManager) {
+        try {
+            if (hudManager.scannedScrapNum <= 0) {
+                hudManager.totalScrapScanned = 0;
+                hudManager.totalScrapScannedDisplayNum = 0;
+                hudManager.addToDisplayTotalInterval = 0.35f;
+                hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, false);
+                return;
+            }
+
+            hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, true);
+        } catch (Exception ex) {
+            Debug.LogError($"Error in updatescannodes C: {ex}");
+        }
     }
 }
