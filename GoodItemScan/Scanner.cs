@@ -249,6 +249,8 @@ public static class Scanner {
     }
 
     public static bool IsScanNodeVisible(ScanNodeProperties node) {
+        if (node == null) return false;
+        
         if (!IsScanNodeOnScreen(node)) return false;
 
         if (!IsScanNodeValid(node)) return false;
