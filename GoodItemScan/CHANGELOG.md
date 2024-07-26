@@ -1,5 +1,10 @@
 # Good Item Scan Mod
 
+## 1.4.0
+
+\+ Added option to hide empty subtext box<br>
+\# Replaced vanilla's Update Scan Nodes method<br>
+
 ## 1.3.0
 
 \+ Added config option to limit how many scan nodes will be scanned each frame<br>
