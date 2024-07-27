@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.4.3
+
+\* All NullReferenceExceptions should now be fixed<br>
+
 ## 1.4.2
 
 \* Fixed scanner breaking by a deleted ScanNode<br>
