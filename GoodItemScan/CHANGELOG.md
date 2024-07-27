@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.4.4
+
+\# Some micro-management for performance<br>
+
 ## 1.4.3
 
 \* All NullReferenceExceptions should now be fixed<br>
