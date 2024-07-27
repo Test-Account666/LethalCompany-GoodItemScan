@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.4.5
+
+\* Fix the silly stuff<br>
+
 ## 1.4.4
 
 \# Some micro-management for performance<br>
