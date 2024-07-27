@@ -5,6 +5,7 @@ using System.Linq;
 using GameNetcodeStuff;
 using TMPro;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
 namespace GoodItemScan;
@@ -300,10 +301,17 @@ public static class Scanner {
         var hudManager = HUDManager.Instance;
         if (hudManager == null) return;
 
+        var nodesToProcess = hudManager.scanNodes.Count;
+
+        if (nodesToProcess <= 0) return;
+
+        var processed = 0;
+
         var updatingThisFrame = _nodeVisibilityCheckCoroutine == null;
 
-
         foreach (var scanElement in hudManager.scanElements) {
+            if (processed >= nodesToProcess) break;
+
             var foundNode = hudManager.scanNodes.TryGetValue(scanElement, out var node);
 
             if (hudManager.scanNodes.Count <= 0 || !foundNode) {
@@ -311,15 +319,13 @@ public static class Scanner {
                 continue;
             }
 
+            processed += 1;
+
             if (node == null) continue;
 
             if (updatingThisFrame) _ScanNodesToUpdate.Add((node, scanElement));
 
-            try {
-                UpdateScanNodePosition(scanElement, node, playerScript);
-            } catch (Exception ex) {
-                Debug.LogError($"Error in UpdateScanNodePosition: {ex}");
-            }
+            UpdateScanNodePosition(scanElement, node, playerScript);
         }
 
         UpdateScrapTotalValue(hudManager);
@@ -343,13 +349,9 @@ public static class Scanner {
 
             processedNodesThisFrame += 1;
 
-            try {
-                if (IsScanNodeVisible(node)) continue;
+            if (IsScanNodeVisible(node)) continue;
 
-                HandleMissingNode(hudManager, scanElement, true, node);
-            } catch (Exception ex) {
-                Debug.LogError($"Error in NodeIsNotVisible: {ex}");
-            }
+            HandleMissingNode(hudManager, scanElement, true, node);
         }
 
         _ScanNodesToUpdate.Clear();
@@ -391,22 +393,20 @@ public static class Scanner {
 
     private static void UpdateScanNodePosition(RectTransform scanElement, ScanNodeProperties node, PlayerControllerB playerScript) {
         var screenPoint = playerScript.gameplayCamera.WorldToScreenPoint(node.transform.position);
-        scanElement.anchoredPosition = new(screenPoint.x - 439.48f, screenPoint.y - 244.8f);
+        const float offsetX = 439.48f;
+        const float offsetY = 244.8f;
+        scanElement.anchoredPosition = new(screenPoint.x - offsetX, screenPoint.y - offsetY);
     }
 
     private static void UpdateScrapTotalValue(HUDManager hudManager) {
-        try {
-            if (hudManager.scannedScrapNum <= 0) {
-                hudManager.totalScrapScanned = 0;
-                hudManager.totalScrapScannedDisplayNum = 0;
-                hudManager.addToDisplayTotalInterval = 0.35f;
-                hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, false);
-                return;
-            }
-
-            hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, true);
-        } catch (Exception ex) {
-            Debug.LogError($"Error in UpdateScrapTotalValue: {ex}");
+        if (hudManager.scannedScrapNum <= 0) {
+            hudManager.totalScrapScanned = 0;
+            hudManager.totalScrapScannedDisplayNum = 0;
+            hudManager.addToDisplayTotalInterval = 0.35f;
+            hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, false);
+            return;
         }
+
+        hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, true);
     }
 }
