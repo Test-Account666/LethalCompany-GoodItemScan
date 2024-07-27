@@ -1,11 +1,9 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using GameNetcodeStuff;
 using TMPro;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
 namespace GoodItemScan;
@@ -399,14 +397,12 @@ public static class Scanner {
     }
 
     private static void UpdateScrapTotalValue(HUDManager hudManager) {
-        if (hudManager.scannedScrapNum <= 0) {
+        if (hudManager.scannedScrapNum <= 1 || hudManager.scanNodes.Count <= 0) {
             hudManager.totalScrapScanned = 0;
             hudManager.totalScrapScannedDisplayNum = 0;
             hudManager.addToDisplayTotalInterval = 0.35f;
-            hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, false);
-            return;
         }
 
-        hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, true);
+        hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, hudManager.scannedScrapNum > 1 && hudManager.scanNodes.Count > 0);
     }
 }
