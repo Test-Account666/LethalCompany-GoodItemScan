@@ -19,7 +19,7 @@ public static class Scanner {
     public static void Scan() {
         var localPlayer = StartOfRound.Instance.localPlayerController;
 
-        if (localPlayer is null) return;
+        if (localPlayer == null) return;
 
         var hudManager = HUDManager.Instance;
 
@@ -42,7 +42,7 @@ public static class Scanner {
     }
 
     private static void ResetScanState(HUDManager hudManager) {
-        if (_scanCoroutine is not null) hudManager.StopCoroutine(_scanCoroutine);
+        if (_scanCoroutine != null) hudManager.StopCoroutine(_scanCoroutine);
 
         if (ConfigManager.alwaysRescan.Value) {
             hudManager.DisableAllScanElements();
@@ -67,7 +67,7 @@ public static class Scanner {
         var processedNodesThisFrame = 0;
 
         if (ConfigManager.preferClosestNodes.Value)
-            scanNodes = scanNodes.Where(node => node is not null).Select(node => node!)
+            scanNodes = scanNodes.Where(node => node != null).Select(node => node!)
                                  .OrderBy(node => Vector3.Distance(playerLocation, node.transform.position)).ToArray();
 
 
@@ -80,7 +80,7 @@ public static class Scanner {
 
             processedNodesThisFrame += 1;
 
-            if (scanNodeProperties is null) continue;
+            if (scanNodeProperties == null) continue;
 
             var scanNodePosition = scanNodeProperties.transform.position;
 
@@ -142,10 +142,8 @@ public static class Scanner {
         return true;
     }
 
-    private static bool IsScanNodeValid(GrabbableObject? grabbableObject, EnemyAI? enemyAI,
-                                        TerminalAccessibleObject? terminalAccessibleObject) {
-        if (grabbableObject is not null
-         && (grabbableObject.isHeld || grabbableObject.isHeldByEnemy || grabbableObject.deactivated)) return false;
+    private static bool IsScanNodeValid(GrabbableObject? grabbableObject, EnemyAI? enemyAI, TerminalAccessibleObject? terminalAccessibleObject) {
+        if (grabbableObject != null && (grabbableObject.isHeld || grabbableObject.isHeldByEnemy || grabbableObject.deactivated)) return false;
 
         if (enemyAI is {
                 isEnemyDead: true,
@@ -164,7 +162,7 @@ public static class Scanner {
     private static bool IsScanNodeValid(ScanNodeProperties scanNodeProperties) {
         var parent = scanNodeProperties.transform.parent;
 
-        if (parent is null) return false;
+        if (parent == null) return false;
 
         GetComponents(parent, out var cachedComponents);
 
@@ -173,8 +171,7 @@ public static class Scanner {
         return IsScanNodeValid(grabbableObject, enemyAI, terminalAccessibleObject);
     }
 
-    private static void GetComponents(Transform parent,
-                                      out (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?) cachedComponents) {
+    private static void GetComponents(Transform parent, out (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?) cachedComponents) {
         if (!ConfigManager.useDictionaryCache.Value) {
             GetUncachedComponents(parent, out cachedComponents);
             return;
@@ -186,8 +183,7 @@ public static class Scanner {
         _ComponentCache[parent] = cachedComponents;
     }
 
-    private static void GetUncachedComponents(Transform parent,
-                                              out (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?) cachedComponents) {
+    private static void GetUncachedComponents(Transform parent, out (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?) cachedComponents) {
         var grabbableObjectFound = parent.TryGetComponent<GrabbableObject>(out var grabbableObject);
         var enemyAIFound = parent.TryGetComponent<EnemyAI>(out var enemyAI);
         var terminalAccessibleObjectFound = parent.TryGetComponent<TerminalAccessibleObject>(out var terminalAccessibleObject);
@@ -204,11 +200,11 @@ public static class Scanner {
 
         var localPlayer = StartOfRound.Instance.localPlayerController;
 
-        if (localPlayer is null) yield break;
+        if (localPlayer == null) yield break;
 
         var hudManager = HUDManager.Instance;
 
-        if (hudManager is null) yield break;
+        if (hudManager == null) yield break;
 
         GoodItemScan.LogDebug($"Scanning node '{currentScanNodeCount}'!");
 
@@ -250,7 +246,7 @@ public static class Scanner {
 
     public static bool IsScanNodeVisible(ScanNodeProperties node) {
         if (node == null) return false;
-        
+
         if (!IsScanNodeOnScreen(node)) return false;
 
         if (!IsScanNodeValid(node)) return false;
@@ -264,7 +260,7 @@ public static class Scanner {
         if (!node.gameObject.activeSelf) return false;
 
         var localPlayer = StartOfRound.Instance.localPlayerController;
-        if (localPlayer is null) return false;
+        if (localPlayer == null) return false;
 
         var camera = localPlayer.gameplayCamera;
 
@@ -297,13 +293,15 @@ public static class Scanner {
         return cosHalfAdjustedFOV;
     }
 
+    private static readonly HashSet<(ScanNodeProperties, RectTransform)> _ScanNodesToUpdate = [
+    ];
+
     public static void UpdateScanNodes(PlayerControllerB playerScript) {
         var hudManager = HUDManager.Instance;
         if (hudManager == null) return;
 
-        var updatingThisFrame = _nodeVisibilityCheckCoroutine is null;
+        var updatingThisFrame = _nodeVisibilityCheckCoroutine == null;
 
-        var scanNodesToUpdate = new HashSet<(ScanNodeProperties, RectTransform)>();
 
         foreach (var scanElement in hudManager.scanElements) {
             var foundNode = hudManager.scanNodes.TryGetValue(scanElement, out var node);
@@ -315,7 +313,7 @@ public static class Scanner {
 
             if (node == null) continue;
 
-            if (updatingThisFrame) scanNodesToUpdate.Add((node, scanElement));
+            if (updatingThisFrame) _ScanNodesToUpdate.Add((node, scanElement));
 
             try {
                 UpdateScanNodePosition(scanElement, node, playerScript);
@@ -326,9 +324,9 @@ public static class Scanner {
 
         UpdateScrapTotalValue(hudManager);
 
-        if (!updatingThisFrame || scanNodesToUpdate.Count <= 0) return;
+        if (!updatingThisFrame || _ScanNodesToUpdate.Count <= 0) return;
 
-        _nodeVisibilityCheckCoroutine = HUDManager.Instance.StartCoroutine(UpdateScanNodes(hudManager, scanNodesToUpdate));
+        _nodeVisibilityCheckCoroutine = HUDManager.Instance.StartCoroutine(UpdateScanNodes(hudManager, _ScanNodesToUpdate));
     }
 
     private static IEnumerator UpdateScanNodes(HUDManager hudManager, HashSet<(ScanNodeProperties, RectTransform)> scanNodesToUpdate) {
@@ -353,6 +351,8 @@ public static class Scanner {
                 Debug.LogError($"Error in NodeIsNotVisible: {ex}");
             }
         }
+
+        _ScanNodesToUpdate.Clear();
 
         _nodeVisibilityCheckCoroutine = null;
     }
@@ -383,12 +383,10 @@ public static class Scanner {
             hudManager.scanElementText[1].text = node.subText;
         }
 
-        if (ConfigManager.hideEmptyScanNodeSubText.Value)
-            hudManager.scanElementText[1].transform.parent.Find("SubTextBox").gameObject.SetActive(!string.IsNullOrWhiteSpace(node.subText));
+        if (node.creatureScanID != -1) hudManager.AttemptScanNewCreature(node.creatureScanID);
 
-        if (node.creatureScanID == -1) return;
-
-        hudManager.AttemptScanNewCreature(node.creatureScanID);
+        if (!ConfigManager.hideEmptyScanNodeSubText.Value) return;
+        hudManager.scanElementText[1].transform.parent.Find("SubTextBox").gameObject.SetActive(!string.IsNullOrWhiteSpace(node.subText));
     }
 
     private static void UpdateScanNodePosition(RectTransform scanElement, ScanNodeProperties node, PlayerControllerB playerScript) {

@@ -44,7 +44,7 @@ public class GoodItemScan : BaseUnityPlugin {
     }
 
     internal static void SetIncreasedMaximumScanNodes(HUDManager? hudManager) {
-        if (hudManager is null) return;
+        if (hudManager == null) return;
 
         foreach (var scanNode in hudManager.scanElements) {
             hudManager.scanNodes.Remove(scanNode);
