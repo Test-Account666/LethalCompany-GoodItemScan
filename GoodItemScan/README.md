@@ -10,6 +10,6 @@ It should also be more reliable than the vanilla scan.
 
 ## Known Issues
 
-- None
+- Scanning one item without "Always Re-Scan" enabled, can make total value appear
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/P5P6ZWLCY)
