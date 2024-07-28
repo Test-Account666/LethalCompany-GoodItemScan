@@ -51,7 +51,6 @@ public static class Scanner {
             hudManager.totalScrapScannedDisplayNum = 0;
         }
 
-        if (hudManager.scanNodes.Count <= 0) hudManager.totalValueText.text = "$0";
 
         hudManager.playerPingingScan = 0.3f;
     }
@@ -299,6 +298,8 @@ public static class Scanner {
         var hudManager = HUDManager.Instance;
         if (hudManager == null) return;
 
+        UpdateScrapTotalValue(hudManager);
+
         var nodesToProcess = hudManager.scanNodes.Count;
 
         if (nodesToProcess <= 0) return;
@@ -325,8 +326,6 @@ public static class Scanner {
 
             UpdateScanNodePosition(scanElement, node, playerScript);
         }
-
-        UpdateScrapTotalValue(hudManager);
 
         if (!updatingThisFrame || _ScanNodesToUpdate.Count <= 0) return;
 
@@ -397,12 +396,12 @@ public static class Scanner {
     }
 
     private static void UpdateScrapTotalValue(HUDManager hudManager) {
-        if (hudManager.scannedScrapNum <= 1 || hudManager.scanNodes.Count <= 0) {
+        if (hudManager.scannedScrapNum <= 0 || hudManager.scanNodes.Count <= 0) {
             hudManager.totalScrapScanned = 0;
             hudManager.totalScrapScannedDisplayNum = 0;
             hudManager.addToDisplayTotalInterval = 0.35f;
         }
 
-        hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, hudManager.scannedScrapNum > 1 && hudManager.scanNodes.Count > 0);
+        hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, hudManager.scannedScrapNum > 1 && hudManager.scanNodes.Count > 1);
     }
 }
