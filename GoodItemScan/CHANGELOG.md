@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.4.6
+
+\* Fix silly total value<br>
+
 ## 1.4.5
 
 \* Fix the silly stuff<br>
