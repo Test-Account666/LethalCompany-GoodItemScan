@@ -33,7 +33,7 @@ public static class ConfigManager {
                                        "If true, will always start a fresh scan. "
                                      + "This removes all previously scanned nodes from the UI.");
 
-        scanNodesHardLimit = configFile.Bind("General", "Scan Nodes Hard Limit", 666,
+        scanNodesHardLimit = configFile.Bind("General", "Scan Nodes Hard Limit", 120,
                                              new ConfigDescription("Defines the maximum amount of scan nodes on screen. "
                                                                  + "If you feel like your screen is cluttered, try lowering this value.",
                                                                    new AcceptableValueRange<int>(30, 666)));

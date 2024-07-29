@@ -56,7 +56,7 @@ public static class Scanner {
     }
 
     private static IEnumerator ScanNodes(PlayerControllerB localPlayer, ScanNodeProperties?[] scanNodes) {
-        yield return new WaitForEndOfFrame();
+        yield return null;
 
         var currentScanNodeCount = 0L;
 
@@ -72,7 +72,6 @@ public static class Scanner {
         foreach (var scanNodeProperties in scanNodes) {
             if (processedNodesThisFrame >= ConfigManager.maxScanNodesToProcessPerFrame.Value) {
                 yield return null;
-                yield return new WaitForEndOfFrame();
                 processedNodesThisFrame = 0;
             }
 
@@ -150,7 +149,7 @@ public static class Scanner {
         if (ConfigManager.showOpenedBlastDoorScanNode.Value) return true;
 
         return terminalAccessibleObject is not {
-            isBigDoor: true, isDoorOpen: true,
+            isBigDoor: true, isDoorOpen: true, isPoweredOn: true,
         };
     }
 
@@ -194,7 +193,7 @@ public static class Scanner {
 
     private static IEnumerator AddScanNodeToUI(ScanNodeProperties scanNodeProperties, long currentScanNodeCount) {
         yield return new WaitForSeconds(ConfigManager.scanNodeDelay.Value / 100F * currentScanNodeCount);
-        yield return new WaitForEndOfFrame();
+        yield return null;
 
         var localPlayer = StartOfRound.Instance.localPlayerController;
 
@@ -203,6 +202,8 @@ public static class Scanner {
         var hudManager = HUDManager.Instance;
 
         if (hudManager == null) yield break;
+
+        if (scanNodeProperties == null) yield break;
 
         GoodItemScan.LogDebug($"Scanning node '{currentScanNodeCount}'!");
 
@@ -320,7 +321,10 @@ public static class Scanner {
 
             processed += 1;
 
-            if (node == null) continue;
+            if (node == null) {
+                HandleMissingNode(hudManager, scanElement, false, node);
+                continue;
+            }
 
             if (updatingThisFrame) _ScanNodesToUpdate.Add((node, scanElement));
 
@@ -333,14 +337,13 @@ public static class Scanner {
     }
 
     private static IEnumerator UpdateScanNodes(HUDManager hudManager, HashSet<(ScanNodeProperties, RectTransform)> scanNodesToUpdate) {
-        yield return new WaitForEndOfFrame();
+        yield return null;
 
         var processedNodesThisFrame = 0;
 
         foreach (var (node, scanElement) in scanNodesToUpdate) {
             if (processedNodesThisFrame >= ConfigManager.maxScanNodesToProcessPerFrame.Value) {
                 yield return null;
-                yield return new WaitForEndOfFrame();
                 processedNodesThisFrame = 0;
             }
 
