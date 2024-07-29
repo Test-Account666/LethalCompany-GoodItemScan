@@ -1,5 +1,12 @@
 # Good Item Scan Mod
 
+## 1.4.7
+
+\+ Added even more null checks<br>
+\* Fixed blast doors scannable after taking apparatus<br>
+\# Reduced default `Scan Nodes Hard Limit` to `120`<br>
+\# Replaced EndOfFrame wait with `null` wait
+
 ## 1.4.6
 
 \* Fix silly total value<br>
