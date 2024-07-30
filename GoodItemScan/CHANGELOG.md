@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.5.1
+
+\* Fixed re-hosting causing the scanner to break<br>
+
 ## 1.5.0
 
 \# This mod now completely bypasses the vanilla scan system. Even the total animation.<br>
