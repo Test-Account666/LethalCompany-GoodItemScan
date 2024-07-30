@@ -6,11 +6,13 @@ using UnityEngine;
 
 namespace GoodItemScan;
 
+[BepInDependency("HDLethalCompany", BepInDependency.DependencyFlags.SoftDependency)]
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 public class GoodItemScan : BaseUnityPlugin {
     public static GoodItemScan Instance { get; private set; } = null!;
     internal new static ManualLogSource Logger { get; private set; } = null!;
     internal static Harmony? Harmony { get; set; }
+    public static RectTransform? originalRectTransform;
 
     private void Awake() {
         Logger = base.Logger;
@@ -20,9 +22,33 @@ public class GoodItemScan : BaseUnityPlugin {
 
         ConfigManager.scanNodesHardLimit.SettingChanged += (_, _) => SetIncreasedMaximumScanNodes(HUDManager.Instance);
 
+
         Patch();
 
+        UnpatchHdLethalCompany();
+
         Logger.LogInfo($"{MyPluginInfo.PLUGIN_GUID} v{MyPluginInfo.PLUGIN_VERSION} has loaded!");
+    }
+
+    private static void UnpatchHdLethalCompany() {
+        var updateScanNodesMethod = AccessTools.DeclaredMethod(typeof(HUDManager), nameof(HUDManager.UpdateScanNodes));
+
+        var patches = Harmony.GetPatchInfo(updateScanNodesMethod);
+
+        if (patches == null) return;
+
+        foreach (var postfix in (Patch?[]) [
+                     ..patches.Postfixes,
+                 ]) {
+            if (postfix == null) continue;
+
+            if (!postfix.owner.ToLower().Contains("hdlethalcompany")) continue;
+
+            Harmony?.Unpatch(updateScanNodesMethod, HarmonyPatchType.Postfix, postfix.owner);
+
+            Logger.LogInfo("Found HDLethalCompany patch!");
+            Logger.LogInfo($"Unpatched {updateScanNodesMethod} method!");
+        }
     }
 
     internal static void Patch() {
@@ -51,18 +77,20 @@ public class GoodItemScan : BaseUnityPlugin {
             scanNode.gameObject.SetActive(false);
         }
 
+        if (originalRectTransform == null) originalRectTransform = hudManager.scanElements[0];
 
-        hudManager.scanNodesHit = new RaycastHit[ConfigManager.scanNodesHardLimit.Value];
+        if (originalRectTransform == null) {
+            Logger.LogFatal("An error occured while trying to increase maximum scan nodes!");
+            return;
+        }
 
-        var rectTransform = hudManager.scanElements[0];
-
-        List<RectTransform> scanElementsList = [
+        hudManager.scanNodesHit = [
         ];
 
-        for (var index = 0; index < ConfigManager.scanNodesHardLimit.Value; index++)
-            scanElementsList.Add(Instantiate(rectTransform, rectTransform.position, rectTransform.rotation, rectTransform.parent));
+        hudManager.scanElements = [
+        ];
 
-        hudManager.scanElements = scanElementsList.ToArray();
+        Scanner.FillInScanNodes(originalRectTransform);
     }
 
     internal static void LogDebug(object data) {

@@ -30,6 +30,13 @@ public static class HUDManagerPatch {
         return false;
     }
 
+    [HarmonyPatch(nameof(HUDManager.DisableAllScanElements))]
+    [HarmonyPrefix]
+    private static bool RedirectDisableAllScanElements() {
+        Scanner.DisableAllScanElements();
+        return false;
+    }
+
     [HarmonyPatch(nameof(HUDManager.UpdateScanNodes))]
     [HarmonyPrefix]
     private static bool UpdateScanNodes(PlayerControllerB playerScript) {

@@ -71,6 +71,6 @@ public static class ConfigManager {
                                                           + "This feature was also never tested, so it might not even work.");
 
         hideEmptyScanNodeSubText = configFile.Bind("Special Cases", "Hide Empty Scan Node Sub Text", true,
-                                                   "I true, will hide the rectangle beneath the item name, if there's no text to be displayed");
+                                                   "I true, will hide the rectangle beneath the item name, if there's no text to be displayed.");
     }
 }
