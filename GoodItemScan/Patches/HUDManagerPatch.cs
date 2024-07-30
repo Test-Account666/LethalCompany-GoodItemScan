@@ -1,4 +1,3 @@
-using GameNetcodeStuff;
 using HarmonyLib;
 using UnityEngine.InputSystem;
 
@@ -39,8 +38,8 @@ public static class HUDManagerPatch {
 
     [HarmonyPatch(nameof(HUDManager.UpdateScanNodes))]
     [HarmonyPrefix]
-    private static bool UpdateScanNodes(PlayerControllerB playerScript) {
-        Scanner.UpdateScanNodes(playerScript);
+    private static bool UpdateScanNodes() {
+        Scanner.UpdateScanNodes();
         return false;
     }
 
@@ -53,7 +52,7 @@ public static class HUDManagerPatch {
         return false;
     }
 
-    [HarmonyPatch(nameof(HUDManager.Awake))]
+    [HarmonyPatch(nameof(HUDManager.Start))]
     [HarmonyPostfix]
     // ReSharper disable once InconsistentNaming
     private static void AfterHudManagerAwake(HUDManager __instance) => GoodItemScan.SetIncreasedMaximumScanNodes(__instance);

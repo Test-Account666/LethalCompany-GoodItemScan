@@ -28,6 +28,8 @@ public static class Scanner {
         DisableAllScanElements();
         _ScannedNodes.Clear();
 
+        _CachedFovValues.Clear();
+
         var maxSize = ConfigManager.scanNodesHardLimit.Value;
 
         for (var index = 0; index < maxSize; index++) {
@@ -45,6 +47,8 @@ public static class Scanner {
 
             _ScannedNodes.Add(scannedNode);
         }
+
+        _nodeVisibilityCheckCoroutine = null;
     }
 
     public static void Scan() {
@@ -89,7 +93,9 @@ public static class Scanner {
         foreach (var (_, index) in _ScanNodes) {
             var scannedNode = _ScannedNodes[index];
 
-            scannedNode.rectTransform.gameObject.SetActive(false);
+            var rectTransform = scannedNode.rectTransform;
+
+            if (rectTransform) rectTransform.gameObject.SetActive(false);
             scannedNode.ScanNodeProperties = null;
         }
 
@@ -194,13 +200,23 @@ public static class Scanner {
         };
     }
 
-    private static readonly Dictionary<Transform, (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?)> _ComponentCache = [
+    private static readonly Dictionary<GameObject, (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?)> _ComponentCache = [
     ];
 
-    private static bool IsScanNodeValid(ScanNodeProperties scanNodeProperties) {
-        var parent = scanNodeProperties.transform.parent;
+    private static bool IsScanNodeValid(ScannedNode scannedNode) {
+        var parent = scannedNode.scanNodeParent;
 
-        if (parent == null) return false;
+        return IsScanNodeValid(parent);
+    }
+
+    private static bool IsScanNodeValid(ScanNodeProperties scanNodeProperties) {
+        var parent = scanNodeProperties.transform.parent.gameObject;
+
+        return IsScanNodeValid(parent);
+    }
+
+    private static bool IsScanNodeValid(GameObject parent) {
+        if (!parent || parent == null) return false;
 
         GetComponents(parent, out var cachedComponents);
 
@@ -209,7 +225,7 @@ public static class Scanner {
         return IsScanNodeValid(grabbableObject, enemyAI, terminalAccessibleObject);
     }
 
-    private static void GetComponents(Transform parent, out (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?) cachedComponents) {
+    private static void GetComponents(GameObject parent, out (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?) cachedComponents) {
         if (!ConfigManager.useDictionaryCache.Value) {
             GetUncachedComponents(parent, out cachedComponents);
             return;
@@ -221,7 +237,7 @@ public static class Scanner {
         _ComponentCache[parent] = cachedComponents;
     }
 
-    private static void GetUncachedComponents(Transform parent, out (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?) cachedComponents) {
+    private static void GetUncachedComponents(GameObject parent, out (GrabbableObject?, EnemyAI?, TerminalAccessibleObject?) cachedComponents) {
         var grabbableObjectFound = parent.TryGetComponent<GrabbableObject>(out var grabbableObject);
         var enemyAIFound = parent.TryGetComponent<EnemyAI>(out var enemyAI);
         var terminalAccessibleObjectFound = parent.TryGetComponent<TerminalAccessibleObject>(out var terminalAccessibleObject);
@@ -282,12 +298,14 @@ public static class Scanner {
         return foundScannedNode;
     }
 
-    public static bool IsScanNodeVisible(ScanNodeProperties? node) {
+    public static bool IsScanNodeVisible(ScannedNode scannedNode) {
+        var node = scannedNode.ScanNodeProperties;
+
         if (node == null) return false;
 
         if (!IsScanNodeOnScreen(node)) return false;
 
-        if (!IsScanNodeValid(node)) return false;
+        if (!IsScanNodeValid(scannedNode)) return false;
 
         var localPlayer = StartOfRound.Instance.localPlayerController;
 
@@ -334,7 +352,7 @@ public static class Scanner {
     private static readonly HashSet<ScannedNode> _ScanNodesToUpdate = [
     ];
 
-    public static void UpdateScanNodes(PlayerControllerB playerScript) {
+    public static void UpdateScanNodes() {
         var hudManager = HUDManager.Instance;
         if (hudManager == null) return;
 
@@ -376,7 +394,7 @@ public static class Scanner {
 
             processedNodesThisFrame += 1;
 
-            if (IsScanNodeVisible(scannedNode.ScanNodeProperties)) continue;
+            if (IsScanNodeVisible(scannedNode)) continue;
 
             HandleMissingNode(hudManager, scannedNode);
         }
@@ -387,6 +405,8 @@ public static class Scanner {
     }
 
     private static void HandleMissingNode(HUDManager hudManager, ScannedNode scannedNode) {
+        if (scannedNode == null!) return;
+
         var node = scannedNode.ScanNodeProperties;
 
         if (node != null) _ScanNodes.Remove(node);

@@ -12,8 +12,14 @@ public class ScannedNode(RectTransform rectTransform, TextMeshProUGUI header, Te
             _scanNodeProperties = value;
 
             hasScanNode = value != null;
+
+            if (!hasScanNode) return;
+
+            scanNodeParent = value!.transform.parent.gameObject;
         }
     }
+
+    public GameObject scanNodeParent = null!;
 
     public readonly RectTransform rectTransform = rectTransform;
     public readonly TextMeshProUGUI header = header;

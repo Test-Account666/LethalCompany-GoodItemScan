@@ -12,7 +12,7 @@ public class GoodItemScan : BaseUnityPlugin {
     public static GoodItemScan Instance { get; private set; } = null!;
     internal new static ManualLogSource Logger { get; private set; } = null!;
     internal static Harmony? Harmony { get; set; }
-    public static RectTransform? originalRectTransform;
+    public static RectTransform originalRectTransform = null!;
 
     private void Awake() {
         Logger = base.Logger;
@@ -77,7 +77,7 @@ public class GoodItemScan : BaseUnityPlugin {
             scanNode.gameObject.SetActive(false);
         }
 
-        if (originalRectTransform == null) originalRectTransform = hudManager.scanElements[0];
+        if (hudManager.scanElements.Length > 0) originalRectTransform = hudManager.scanElements[0];
 
         if (originalRectTransform == null) {
             Logger.LogFatal("An error occured while trying to increase maximum scan nodes!");
