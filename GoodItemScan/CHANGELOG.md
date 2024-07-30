@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.5.0
+
+\# This mod now completely bypasses the vanilla scan system. Even the total animation.<br>
+
 ## 1.4.7
 
 \+ Added even more null checks<br>
