@@ -103,6 +103,12 @@ public static class Scanner {
         }
 
         _ScanNodes.Clear();
+
+        var hudManager = HUDManager.Instance;
+
+        if (_nodeVisibilityCheckCoroutine != null && hudManager != null) hudManager.StopCoroutine(_nodeVisibilityCheckCoroutine);
+
+        _nodeVisibilityCheckCoroutine = null;
     }
 
     private static IEnumerator ScanNodes(PlayerControllerB localPlayer, ScanNodeProperties?[] scanNodes) {
