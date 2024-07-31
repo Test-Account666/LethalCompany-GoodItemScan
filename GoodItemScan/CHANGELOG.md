@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.5.3
+
+\* Fixed visibility check coroutine never executing after death<br>
+
 ## 1.5.2
 
 \* Fixed InvalidOperationException<br>
