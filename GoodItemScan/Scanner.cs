@@ -15,6 +15,9 @@ public static class Scanner {
     private static Coroutine? _scanCoroutine;
     private static Coroutine? _nodeVisibilityCheckCoroutine;
 
+    private static readonly HashSet<ScanNodeProperties> _ScanNodesToRemove = [
+    ];
+
     private static readonly Dictionary<ScanNodeProperties, int> _ScanNodes = [
     ];
 
@@ -356,6 +359,9 @@ public static class Scanner {
         var hudManager = HUDManager.Instance;
         if (hudManager == null) return;
 
+        foreach (var scanNodeProperties in _ScanNodesToRemove) _ScanNodes.Remove(scanNodeProperties);
+        _ScanNodesToRemove.Clear();
+
         UpdateScrapTotalValue(hudManager);
 
         if (_ScanNodes.Count <= 0) return;
@@ -409,7 +415,7 @@ public static class Scanner {
 
         var node = scannedNode.ScanNodeProperties;
 
-        if (node != null) _ScanNodes.Remove(node);
+        if (node != null) _ScanNodesToRemove.Add(node);
 
         scannedNode.ScanNodeProperties = null;
 
