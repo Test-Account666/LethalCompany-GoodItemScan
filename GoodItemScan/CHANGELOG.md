@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.5.2
+
+\* Fixed InvalidOperationException<br>
+
 ## 1.5.1
 
 \* Fixed re-hosting causing the scanner to break<br>
