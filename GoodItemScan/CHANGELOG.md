@@ -1,5 +1,10 @@
 # Good Item Scan Mod
 
+## 1.7.0
+
+\+ Added distance checks in visibility check<br>
+\+ Added configurable timer for updating all scan nodes<br>
+
 ## 1.6.0
 
 \+ Added config option for total value update speed<br>
