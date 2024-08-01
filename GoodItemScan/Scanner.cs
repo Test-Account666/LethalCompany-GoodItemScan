@@ -497,11 +497,11 @@ public static class Scanner {
 
         if (_addToDisplayTotalInterval > 0) return;
 
-        _addToDisplayTotalInterval = 0.08525F;
+        _addToDisplayTotalInterval = 0.08525F * (ConfigManager.totalAddWaitMultiplier.Value / 100F);
 
         _scrapScannedValueDisplayed = (int) Mathf.Clamp(Mathf.MoveTowards(_scrapScannedValueDisplayed, _scrapScannedValue,
-                                                                          (1500f + _scrapScannedAmount * 100) * Time.deltaTime),
-                                                        0f, maxDisplayedValue);
+                                                                          (1500f + (_scrapScannedValue * ConfigManager.totalAddWaitMultiplier.Value
+                                                                                  / 100F)) * Time.deltaTime), 0f, maxDisplayedValue);
         hudManager.totalValueText.text = $"${_scrapScannedValueDisplayed}";
 
         if (_scrapScannedValueDisplayed < _scrapScannedValue && _scrapScannedValueDisplayed < maxDisplayedValue)

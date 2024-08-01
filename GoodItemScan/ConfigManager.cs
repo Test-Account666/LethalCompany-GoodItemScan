@@ -23,6 +23,8 @@ public static class ConfigManager {
 
     public static ConfigEntry<bool> hideEmptyScanNodeSubText = null!;
 
+    public static ConfigEntry<int> totalAddWaitMultiplier = null!;
+
 
     internal static void Initialize(ConfigFile configFile) {
         preferClosestNodes = configFile.Bind("General", "Prefer Closest Nodes", true,
@@ -72,5 +74,13 @@ public static class ConfigManager {
 
         hideEmptyScanNodeSubText = configFile.Bind("Special Cases", "Hide Empty Scan Node Sub Text", true,
                                                    "I true, will hide the rectangle beneath the item name, if there's no text to be displayed.");
+
+        totalAddWaitMultiplier = configFile.Bind("Special Cases", "Total Add Wait Multiplier", 100,
+                                                 new ConfigDescription(
+                                                     "This multiplier is used to define the wait time between adding more to the total displayed value. "
+                                                   + "The lower this number, the faster the animation is updated."
+                                                   + "The lower this number, the less will be added per updated."
+                                                   + "For a vanilla-ish feeling, set this to 48.",
+                                                     new AcceptableValueRange<int>(1, 100)));
     }
 }
