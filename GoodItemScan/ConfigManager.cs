@@ -25,6 +25,8 @@ public static class ConfigManager {
 
     public static ConfigEntry<int> totalAddWaitMultiplier = null!;
 
+    public static ConfigEntry<float> updateTimer = null!;
+
 
     internal static void Initialize(ConfigFile configFile) {
         preferClosestNodes = configFile.Bind("General", "Prefer Closest Nodes", true,
@@ -82,5 +84,11 @@ public static class ConfigManager {
                                                    + "The lower this number, the less will be added per updated."
                                                    + "For a vanilla-ish feeling, set this to 48.",
                                                      new AcceptableValueRange<int>(1, 100)));
+
+        updateTimer = configFile.Bind("Special Cases", "Scan Node Update Timer", 1.2F,
+                                      new ConfigDescription(
+                                          "This value is used to have a cooldown between scan node updates (Like position updates). "
+                                        + "The lower this number, the more often it will get updated.",
+                                          new AcceptableValueRange<float>(0F, 12F)));
     }
 }

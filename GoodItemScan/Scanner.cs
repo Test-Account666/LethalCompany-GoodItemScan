@@ -143,7 +143,7 @@ public static class Scanner {
 
             if (distance < scanNodeProperties.minRange) continue;
 
-            if (!IsScanNodeOnScreen(scanNodeProperties)) continue;
+            if (!IsScanNodeOnScreen(scanNodeProperties, scanNodePosition)) continue;
 
             if (!HasLineOfSight(scanNodeProperties, localPlayer)) continue;
 
@@ -312,16 +312,29 @@ public static class Scanner {
 
         if (node == null) return false;
 
-        if (!IsScanNodeOnScreen(node)) return false;
+        var localPlayer = StartOfRound.Instance.localPlayerController;
+
+        var viewPoint = scannedNode.viewPoint;
+
+        var onScreen = viewPoint is {
+            x: >= 0 and <= 1,
+            y: >= 0 and <= 1,
+        };
+
+        if (!onScreen) return false;
+
+        var distance = viewPoint.z;
+
+        if (distance > node.maxRange) return false;
+
+        if (distance < node.minRange) return false;
 
         if (!IsScanNodeValid(scannedNode)) return false;
-
-        var localPlayer = StartOfRound.Instance.localPlayerController;
 
         return !ConfigManager.alwaysCheckForLineOfSight.Value || HasLineOfSight(node, localPlayer);
     }
 
-    public static bool IsScanNodeOnScreen(ScanNodeProperties node) {
+    public static bool IsScanNodeOnScreen(ScanNodeProperties node, Vector3 scanNodePosition) {
         if (!node.gameObject.activeSelf) return false;
 
         var localPlayer = StartOfRound.Instance.localPlayerController;
@@ -329,7 +342,7 @@ public static class Scanner {
 
         var camera = localPlayer.gameplayCamera;
 
-        var direction = node.transform.position - camera.transform.position;
+        var direction = scanNodePosition - camera.transform.position;
         direction.Normalize();
 
         var cosHalfAdjustedFOV = GetCosHalfAdjustedFov(camera);
@@ -361,6 +374,9 @@ public static class Scanner {
     private static readonly HashSet<ScannedNode> _ScanNodesToUpdate = [
     ];
 
+
+    private static float _updateTimer = 0.05F;
+
     public static void UpdateScanNodes() {
         var hudManager = HUDManager.Instance;
         if (hudManager == null) return;
@@ -371,6 +387,12 @@ public static class Scanner {
         UpdateScrapTotalValue(hudManager);
 
         if (_ScanNodes.Count <= 0) return;
+
+        _updateTimer -= Time.deltaTime;
+
+        if (_updateTimer > 0) return;
+
+        _updateTimer = ConfigManager.updateTimer.Value / 100F;
 
         var updatingThisFrame = _nodeVisibilityCheckCoroutine == null;
 
@@ -385,7 +407,7 @@ public static class Scanner {
 
             if (updatingThisFrame) _ScanNodesToUpdate.Add(scannedNode);
 
-            UpdateScanNodePosition(scannedNode.rectTransform, scanNodeProperties);
+            UpdateScanNodePosition(scannedNode);
         }
 
         if (!updatingThisFrame || _ScanNodesToUpdate.Count <= 0) return;
@@ -458,7 +480,10 @@ public static class Scanner {
 
     private static RectTransform _screenRectTransform = null!;
 
-    private static void UpdateScanNodePosition(RectTransform scanElement, ScanNodeProperties node) {
+    private static void UpdateScanNodePosition(ScannedNode scannedNode) {
+        var scanElement = scannedNode.rectTransform;
+        var node = scannedNode.ScanNodeProperties!;
+
         if (!_screenRectTransform) {
             var playerScreen = HUDManager.Instance.playerScreenShakeAnimator.gameObject;
             _screenRectTransform = playerScreen.GetComponent<RectTransform>();
@@ -466,8 +491,13 @@ public static class Scanner {
 
         var rect = _screenRectTransform.rect;
 
-        var viewportPoint = GameNetworkManager.Instance.localPlayerController.gameplayCamera.WorldToViewportPoint(node.transform.position);
-        var screenPoint = new Vector3(rect.xMin + rect.width * viewportPoint.x, rect.yMin + rect.height * viewportPoint.y, viewportPoint.z);
+        var scanNodePosition = node.transform.position;
+
+        var viewPoint = GameNetworkManager.Instance.localPlayerController.gameplayCamera.WorldToViewportPoint(scanNodePosition);
+
+        scannedNode.viewPoint = viewPoint;
+
+        var screenPoint = new Vector3(rect.xMin + rect.width * viewPoint.x, rect.yMin + rect.height * viewPoint.y, viewPoint.z);
 
         scanElement.anchoredPosition = screenPoint;
     }
@@ -487,7 +517,7 @@ public static class Scanner {
             return;
         }
 
-        hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, /*_scrapScannedAmount >= 2 && _ScanNodes.Count >= 2*/true);
+        hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, true);
 
         const int maxDisplayedValue = 10000;
 

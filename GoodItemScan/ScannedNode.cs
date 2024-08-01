@@ -19,6 +19,8 @@ public class ScannedNode(RectTransform rectTransform, TextMeshProUGUI header, Te
         }
     }
 
+    public Vector3 viewPoint;
+
     public GameObject scanNodeParent = null!;
 
     public readonly RectTransform rectTransform = rectTransform;
