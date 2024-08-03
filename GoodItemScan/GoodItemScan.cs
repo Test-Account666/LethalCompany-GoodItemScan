@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using BepInEx;
 using BepInEx.Logging;
+using GoodItemScan.Patches;
 using HarmonyLib;
+using MonoMod.RuntimeDetour;
 using UnityEngine;
 
 namespace GoodItemScan;
@@ -9,6 +11,9 @@ namespace GoodItemScan;
 [BepInDependency("HDLethalCompany", BepInDependency.DependencyFlags.SoftDependency)]
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 public class GoodItemScan : BaseUnityPlugin {
+    public static readonly List<Hook> Hooks = [
+    ];
+
     public static GoodItemScan Instance { get; private set; } = null!;
     internal new static ManualLogSource Logger { get; private set; } = null!;
     internal static Harmony? Harmony { get; set; }
@@ -22,8 +27,9 @@ public class GoodItemScan : BaseUnityPlugin {
 
         ConfigManager.scanNodesHardLimit.SettingChanged += (_, _) => SetIncreasedMaximumScanNodes(HUDManager.Instance);
 
-
         Patch();
+
+        HUDManagerPatch.InitMonoMod();
 
         UnpatchHdLethalCompany();
 
@@ -65,6 +71,8 @@ public class GoodItemScan : BaseUnityPlugin {
         LogDebug("Unpatching...");
 
         Harmony?.UnpatchSelf();
+
+        foreach (var hook in Hooks) hook.Undo();
 
         LogDebug("Finished unpatching!");
     }

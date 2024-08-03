@@ -1,3 +1,5 @@
+using System;
+using GameNetcodeStuff;
 using HarmonyLib;
 using UnityEngine.InputSystem;
 
@@ -5,41 +7,58 @@ namespace GoodItemScan.Patches;
 
 [HarmonyPatch(typeof(HUDManager))]
 public static class HUDManagerPatch {
-    [HarmonyPatch(nameof(HUDManager.AssignNodeToUIElement))]
-    [HarmonyPrefix]
-    private static bool DontAssignNodeToUIElement() => false;
+    //create MonoMod Hooks
+    internal static void InitMonoMod() {
+        GoodItemScan.Hooks.Add(new(AccessTools.Method(typeof(HUDManager), nameof(HUDManager.AssignNodeToUIElement)),
+                                   DontAssignNodeToUIElement,
+                                   new() {
+                                       Priority = -99,
+                                   }));
 
-    [HarmonyPatch(nameof(HUDManager.AssignNewNodes))]
-    [HarmonyPrefix]
-    private static bool DontAssignNewNodes() => false;
+        GoodItemScan.Hooks.Add(new(AccessTools.Method(typeof(HUDManager), nameof(HUDManager.AssignNewNodes)),
+                                   DontAssignNewNodes,
+                                   new() {
+                                       Priority = -99,
+                                   }));
 
-    [HarmonyPatch(nameof(HUDManager.MeetsScanNodeRequirements))]
-    [HarmonyPrefix]
-    // ReSharper disable once InconsistentNaming
-    private static bool MeetsScanNodeRequirements(ref bool __result) {
-        __result = true;
-        return false;
+        GoodItemScan.Hooks.Add(new(AccessTools.Method(typeof(HUDManager), nameof(HUDManager.MeetsScanNodeRequirements)),
+                                   MeetsScanNodeRequirements,
+                                   new() {
+                                       Priority = -99,
+                                   }));
+
+        GoodItemScan.Hooks.Add(new(AccessTools.Method(typeof(HUDManager), nameof(HUDManager.NodeIsNotVisible)),
+                                   NodeIsAlwaysVisible,
+                                   new() {
+                                       Priority = -99,
+                                   }));
+
+        GoodItemScan.Hooks.Add(new(AccessTools.Method(typeof(HUDManager), nameof(HUDManager.UpdateScanNodes)),
+                                   UpdateScanNodes,
+                                   new() {
+                                       Priority = -99,
+                                   }));
     }
 
-    [HarmonyPatch(nameof(HUDManager.NodeIsNotVisible))]
-    [HarmonyPrefix]
-    // ReSharper disable once InconsistentNaming
-    private static bool NodeIsAlwaysVisible(ref bool __result) {
-        __result = false;
-        return false;
+    private static void DontAssignNodeToUIElement(Action<HUDManager, ScanNodeProperties> orig, HUDManager self, ScanNodeProperties node) {
     }
+
+    private static void DontAssignNewNodes(Action<HUDManager, PlayerControllerB> orig, HUDManager self, PlayerControllerB playerScript) {
+    }
+
+    private static bool MeetsScanNodeRequirements(Func<HUDManager, ScanNodeProperties, PlayerControllerB, bool> orig, HUDManager self,
+                                                  ScanNodeProperties node, PlayerControllerB playerScript) => true;
+
+    private static bool NodeIsAlwaysVisible(Func<HUDManager, ScanNodeProperties, int, bool> orig, HUDManager self,
+                                            ScanNodeProperties node, int elementIndex) => false;
+
+    private static void UpdateScanNodes(Action<HUDManager, PlayerControllerB> orig, HUDManager self, PlayerControllerB playerScript) =>
+        Scanner.UpdateScanNodes();
 
     [HarmonyPatch(nameof(HUDManager.DisableAllScanElements))]
     [HarmonyPrefix]
     private static bool RedirectDisableAllScanElements() {
         Scanner.DisableAllScanElements();
-        return false;
-    }
-
-    [HarmonyPatch(nameof(HUDManager.UpdateScanNodes))]
-    [HarmonyPrefix]
-    private static bool UpdateScanNodes() {
-        Scanner.UpdateScanNodes();
         return false;
     }
 
