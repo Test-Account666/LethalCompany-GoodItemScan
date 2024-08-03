@@ -156,7 +156,8 @@ public static class Scanner {
 
             var distance = viewPoint.z;
 
-            if (distance > scanNodeProperties.maxRange + CheatsAPI.additionalDistance) continue;
+            if (distance > scanNodeProperties.maxRange
+              + (scanNodeProperties.nodeType == 1? CheatsAPI.additionalEnemyDistance : CheatsAPI.additionalDistance)) continue;
             if (distance < scanNodeProperties.minRange) continue;
 
             if (distance > CheatsAPI.noLineOfSightDistance)
@@ -343,7 +344,7 @@ public static class Scanner {
 
         var distance = viewPoint.z;
 
-        if (distance > node.maxRange) return false;
+        if (distance > node.maxRange + (node.nodeType == 1? CheatsAPI.additionalEnemyDistance : CheatsAPI.additionalDistance)) return false;
 
         if (distance < node.minRange) return false;
 
