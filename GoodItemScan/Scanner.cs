@@ -52,6 +52,14 @@ public static class Scanner {
         }
 
         _nodeVisibilityCheckCoroutine = null;
+
+        var objectScannerObject = GameObject.Find("Systems/UI/Canvas/ObjectScanner");
+
+        if (objectScannerObject != null && objectScannerObject) objectScannerObject.transform.SetSiblingIndex(3);
+
+        var totalScanInfoObject = GameObject.Find("Systems/UI/Canvas/ObjectScanner/GlobalScanInfo");
+
+        if (totalScanInfoObject != null && totalScanInfoObject) totalScanInfoObject.transform.SetAsLastSibling();
     }
 
     public static void Scan() {
@@ -137,15 +145,23 @@ public static class Scanner {
 
             var scanNodePosition = scanNodeProperties.transform.position;
 
-            var distance = Vector3.Distance(scanNodePosition, playerLocation);
+            var viewPoint = GameNetworkManager.Instance.localPlayerController.gameplayCamera.WorldToViewportPoint(scanNodePosition);
 
-            if (distance > scanNodeProperties.maxRange) continue;
+            var onScreen = viewPoint is {
+                x: >= 0 and <= 1,
+                y: >= 0 and <= 1,
+            };
 
+            if (!onScreen) continue;
+
+            var distance = viewPoint.z;
+
+            if (distance > scanNodeProperties.maxRange + CheatsAPI.additionalDistance) continue;
             if (distance < scanNodeProperties.minRange) continue;
 
-            if (!IsScanNodeOnScreen(scanNodeProperties, scanNodePosition)) continue;
-
-            if (!HasLineOfSight(scanNodeProperties, localPlayer)) continue;
+            if (distance > CheatsAPI.noLineOfSightDistance)
+                if (!HasLineOfSight(scanNodeProperties, localPlayer))
+                    continue;
 
             if (!IsScanNodeValid(scanNodeProperties)) continue;
 
@@ -156,7 +172,7 @@ public static class Scanner {
                 yield break;
             }
 
-            localPlayer.StartCoroutine(AddScanNodeToUI(scanNodeProperties, currentScanNodeCount));
+            localPlayer.StartCoroutine(AddScanNodeToUI(scanNodeProperties, viewPoint, currentScanNodeCount));
         }
     }
 
@@ -257,7 +273,7 @@ public static class Scanner {
     }
 
 
-    private static IEnumerator AddScanNodeToUI(ScanNodeProperties scanNodeProperties, int currentScanNodeCount) {
+    private static IEnumerator AddScanNodeToUI(ScanNodeProperties scanNodeProperties, Vector3 viewPoint, int currentScanNodeCount) {
         yield return new WaitForSeconds(ConfigManager.scanNodeDelay.Value / 100F * currentScanNodeCount);
         yield return null;
 
@@ -278,6 +294,8 @@ public static class Scanner {
         var scannedNode = AssignNodeToUIElement(scanNodeProperties);
 
         if (scannedNode == null) yield break;
+
+        scannedNode.viewPoint = viewPoint;
 
         ActivateScanElement(hudManager, scannedNode);
     }
@@ -331,7 +349,7 @@ public static class Scanner {
 
         if (!IsScanNodeValid(scannedNode)) return false;
 
-        return !ConfigManager.alwaysCheckForLineOfSight.Value || HasLineOfSight(node, localPlayer);
+        return !ConfigManager.alwaysCheckForLineOfSight.Value || distance <= CheatsAPI.noLineOfSightDistance || HasLineOfSight(node, localPlayer);
     }
 
     public static bool IsScanNodeOnScreen(ScanNodeProperties node, Vector3 scanNodePosition) {
