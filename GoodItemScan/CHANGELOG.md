@@ -1,5 +1,11 @@
 # Good Item Scan Mod
 
+## 1.8.0
+
+\+ Added CheatAPI to give mods like LGU control over the scanner<br>
+\* Hopefully fixed another NullReferenceException<br>
+\# Partially switched to Monomod to prevent other mods from patching the vanilla scan<br>
+
 ## 1.7.0
 
 \+ Added distance checks in visibility check<br>
