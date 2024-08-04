@@ -419,7 +419,7 @@ public static class Scanner {
         foreach (var (scanNodeProperties, index) in _ScanNodes) {
             var scannedNode = _ScannedNodes[index];
 
-            if (scanNodeProperties == null) {
+            if (scanNodeProperties == null || !scanNodeProperties) {
                 HandleMissingNode(hudManager, scannedNode);
                 continue;
             }
@@ -502,6 +502,8 @@ public static class Scanner {
     private static void UpdateScanNodePosition(ScannedNode scannedNode) {
         var scanElement = scannedNode.rectTransform;
         var node = scannedNode.ScanNodeProperties!;
+
+        if (node == null || !node) return;
 
         if (!_screenRectTransform) {
             var playerScreen = HUDManager.Instance.playerScreenShakeAnimator.gameObject;
