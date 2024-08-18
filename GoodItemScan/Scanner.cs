@@ -290,7 +290,12 @@ public static class Scanner {
 
         GoodItemScan.LogDebug($"Scanning node '{currentScanNodeCount}'!");
 
-        if (scanNodeProperties.nodeType == 2) ++_scrapScannedAmount;
+        if (scanNodeProperties is {
+                nodeType: 2, scrapValue: > 0,
+            }) {
+            ++_scrapScannedAmount;
+            _scrapScannedValue += scanNodeProperties.scrapValue;
+        }
 
         var scannedNode = AssignNodeToUIElement(scanNodeProperties);
 
@@ -316,10 +321,6 @@ public static class Scanner {
             foundScannedNode = scannedNode;
 
             _ScanNodes.Add(node, scannedNode.index);
-
-            if (node.nodeType != 2) break;
-
-            _scrapScannedValue += node.scrapValue;
             break;
         }
 
@@ -468,11 +469,11 @@ public static class Scanner {
 
         scannedNode.rectTransform.gameObject.SetActive(false);
 
-        if (node == null || node.nodeType != 2) return;
+        if (node == null || node.nodeType != 2 || node.scrapValue <= 0) return;
 
         --_scrapScannedAmount;
 
-        _scrapScannedValue = Mathf.Clamp(hudManager.totalScrapScanned - node.scrapValue, 0, 10000);
+        _scrapScannedValue = Mathf.Clamp(_scrapScannedValue - node.scrapValue, 0, 10000);
     }
 
     private static void ActivateScanElement(HUDManager hudManager, ScannedNode scannedNode) {
@@ -538,7 +539,7 @@ public static class Scanner {
             return;
         }
 
-        hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, true);
+        hudManager.scanInfoAnimator.SetBool(_DisplayAnimatorHash, _scrapScannedValue != 0);
 
         const int maxDisplayedValue = 10000;
 

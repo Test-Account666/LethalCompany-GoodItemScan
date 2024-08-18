@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.8.1
+
+\* Fixed weird scrap value shenanigans<br>
+
 ## 1.8.0
 
 \+ Added CheatAPI to give mods like LGU control over the scanner<br>
