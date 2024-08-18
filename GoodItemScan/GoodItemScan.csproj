@@ -5,7 +5,7 @@
         <AssemblyName>TestAccount666.GoodItemScan</AssemblyName>
         <Product>GoodItemScan</Product>
         <!-- Change to whatever version you're currently on. -->
-        <Version>1.8.1</Version>
+        <Version>1.8.2</Version>
         <Description>Yet another scan mod</Description>
         <Source>https://github.com/Test-Account666/LethalCompany-GoodItemScan/</Source>
     </PropertyGroup>
@@ -53,7 +53,7 @@
         <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" PrivateAssets="all"/>
         <PackageReference Include="BepInEx.Core" Version="5.4.21" PrivateAssets="all"/>
         <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" PrivateAssets="all"/>
-        <PackageReference Include="LethalCompany.GameLibs.Steam" Version="56.0.1-ngd.0" Publicize="true" PrivateAssets="all" />
+        <PackageReference Include="LethalCompany.GameLibs.Steam" Version="61.0.0-ngd.0" Publicize="true" PrivateAssets="all"/>
         <PackageReference Include="UnityEngine.Modules" Version="2022.3.9" IncludeAssets="compile" PrivateAssets="all"/>
     </ItemGroup>
 
