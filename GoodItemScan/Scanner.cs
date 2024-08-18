@@ -290,15 +290,7 @@ public static class Scanner {
 
         GoodItemScan.LogDebug($"Scanning node '{currentScanNodeCount}'!");
 
-        if (scanNodeProperties is {
-                nodeType: 2, scrapValue: > 0,
-            }) {
-            ++_scrapScannedAmount;
-            _scrapScannedValue += scanNodeProperties.scrapValue;
-        }
-
         var scannedNode = AssignNodeToUIElement(scanNodeProperties);
-
         if (scannedNode == null) yield break;
 
         scannedNode.viewPoint = viewPoint;
@@ -480,6 +472,13 @@ public static class Scanner {
         var node = scannedNode.ScanNodeProperties;
 
         if (node == null) return;
+
+        if (node is {
+                nodeType: 2, scrapValue: > 0,
+            }) {
+            ++_scrapScannedAmount;
+            _scrapScannedValue += node.scrapValue;
+        }
 
         var scanElement = scannedNode.rectTransform;
         if (scanElement.gameObject.activeSelf) return;
