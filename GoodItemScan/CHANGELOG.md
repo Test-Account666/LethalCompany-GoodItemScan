@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.8.2
+
+\* Fixed me being an idiot<br>
+
 ## 1.8.1
 
 \* Fixed weird scrap value shenanigans<br>
@@ -40,7 +44,7 @@
 \+ Added even more null checks<br>
 \* Fixed blast doors scannable after taking apparatus<br>
 \# Reduced default `Scan Nodes Hard Limit` to `120`<br>
-\# Replaced EndOfFrame wait with `null` wait
+\# Replaced EndOfFrame wait with `null` wait<br>
 
 ## 1.4.6
 
