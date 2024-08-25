@@ -221,8 +221,12 @@ public static class Scanner {
 
         if (ConfigManager.showOpenedBlastDoorScanNode.Value) return true;
 
-        return terminalAccessibleObject is not {
-            isBigDoor: true, isDoorOpen: true, isPoweredOn: true,
+        if (terminalAccessibleObject is not {
+                isBigDoor: true,
+            }) return true;
+
+        return terminalAccessibleObject is {
+            isDoorOpen: false, isPoweredOn: true,
         };
     }
 
