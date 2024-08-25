@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.8.3
+
+\* Fixed Blast Doors being scannable while power is out<br>
+
 ## 1.8.2
 
 \* Fixed me being an idiot<br>
