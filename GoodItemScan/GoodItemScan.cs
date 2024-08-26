@@ -18,6 +18,7 @@ public class GoodItemScan : BaseUnityPlugin {
     internal new static ManualLogSource Logger { get; private set; } = null!;
     internal static Harmony? Harmony { get; set; }
     public static RectTransform originalRectTransform = null!;
+    public static Scanner? scanner;
 
     private void Awake() {
         Logger = base.Logger;
@@ -87,7 +88,7 @@ public class GoodItemScan : BaseUnityPlugin {
 
         if (hudManager.scanElements.Length > 0) originalRectTransform = hudManager.scanElements[0];
 
-        if (originalRectTransform == null) {
+        if (originalRectTransform == null || !originalRectTransform) {
             Logger.LogFatal("An error occured while trying to increase maximum scan nodes!");
             return;
         }
@@ -98,7 +99,7 @@ public class GoodItemScan : BaseUnityPlugin {
         hudManager.scanElements = [
         ];
 
-        Scanner.FillInScanNodes(originalRectTransform);
+        scanner?.FillInScanNodes(originalRectTransform);
     }
 
     internal static void LogDebug(object data) {

@@ -53,12 +53,12 @@ public static class HUDManagerPatch {
                                             ScanNodeProperties node, int elementIndex) => false;
 
     private static void UpdateScanNodes(Action<HUDManager, PlayerControllerB> orig, HUDManager self, PlayerControllerB playerScript) =>
-        Scanner.UpdateScanNodes();
+        GoodItemScan.scanner?.UpdateScanNodes();
 
     [HarmonyPatch(nameof(HUDManager.DisableAllScanElements))]
     [HarmonyPrefix]
     private static bool RedirectDisableAllScanElements() {
-        Scanner.DisableAllScanElements();
+        GoodItemScan.scanner?.DisableAllScanElements();
         return false;
     }
 
@@ -67,12 +67,15 @@ public static class HUDManagerPatch {
     private static bool PingScanPerformed(ref InputAction.CallbackContext context) {
         if (!context.performed) return false;
 
-        Scanner.Scan();
+        GoodItemScan.scanner?.Scan();
         return false;
     }
 
     [HarmonyPatch(nameof(HUDManager.Start))]
     [HarmonyPostfix]
     // ReSharper disable once InconsistentNaming
-    private static void AfterHudManagerAwake(HUDManager __instance) => GoodItemScan.SetIncreasedMaximumScanNodes(__instance);
+    private static void AfterHudManagerAwake(HUDManager __instance) {
+        GoodItemScan.scanner = new();
+        GoodItemScan.SetIncreasedMaximumScanNodes(__instance);
+    }
 }
