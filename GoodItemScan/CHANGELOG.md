@@ -1,5 +1,10 @@
 # Good Item Scan Mod
 
+## 1.9.0
+
+\# Made the Scanner non-static. Maybe fixes a few issues?<br>
+\# Also added `DontDestroyOnLoad` on all RectTransforms<br>
+
 ## 1.8.3
 
 \* Fixed Blast Doors being scannable while power is out<br>
