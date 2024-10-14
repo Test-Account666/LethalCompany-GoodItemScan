@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.10.0
+
+\+ Added option to update the scan node text after scanning a node<br>
+
 ## 1.9.0
 
 \# Made the Scanner non-static. Maybe fixes a few issues?<br>
