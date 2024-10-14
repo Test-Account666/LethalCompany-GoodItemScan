@@ -179,7 +179,7 @@ public class Scanner {
         }
     }
 
-    private bool HasLineOfSight(ScanNodeProperties scanNodeProperties, PlayerControllerB localPlayer) {
+    private static bool HasLineOfSight(ScanNodeProperties scanNodeProperties, PlayerControllerB localPlayer) {
         if (!scanNodeProperties.requiresLineOfSight) return true;
 
         var hasBoxCollider = TryGetOrAddBoxCollider(scanNodeProperties, out var boxCollider);
@@ -419,7 +419,7 @@ public class Scanner {
             var scannedNode = _scannedNodes[index];
 
             if (scanNodeProperties == null || !scanNodeProperties) {
-                HandleMissingNode(hudManager, scannedNode);
+                HandleMissingNode(scannedNode);
                 continue;
             }
 
@@ -430,10 +430,10 @@ public class Scanner {
 
         if (!updatingThisFrame || _scanNodesToUpdate.Count <= 0) return;
 
-        _nodeVisibilityCheckCoroutine = HUDManager.Instance.StartCoroutine(UpdateScanNodes(hudManager));
+        _nodeVisibilityCheckCoroutine = HUDManager.Instance.StartCoroutine(UpdateScanNodesRoutine());
     }
 
-    private IEnumerator UpdateScanNodes(HUDManager hudManager) {
+    private IEnumerator UpdateScanNodesRoutine() {
         yield return null;
 
         var processedNodesThisFrame = 0;
@@ -446,9 +446,22 @@ public class Scanner {
 
             processedNodesThisFrame += 1;
 
-            if (IsScanNodeVisible(scannedNode)) continue;
+            if (!IsScanNodeVisible(scannedNode)) {
+                HandleMissingNode(scannedNode);
+                continue;
+            }
 
-            HandleMissingNode(hudManager, scannedNode);
+            if (!ConfigManager.updateScanNodeText.Value) continue;
+
+            var node = scannedNode.ScanNodeProperties;
+
+            if (node == null) continue;
+
+            scannedNode.header.text = node.headerText;
+            scannedNode.footer.text = node.subText;
+
+            if (!ConfigManager.hideEmptyScanNodeSubText.Value) continue;
+            scannedNode.subTextBox.SetActive(!string.IsNullOrWhiteSpace(node.subText));
         }
 
         _scanNodesToUpdate.Clear();
@@ -456,7 +469,7 @@ public class Scanner {
         _nodeVisibilityCheckCoroutine = null;
     }
 
-    private void HandleMissingNode(HUDManager hudManager, ScannedNode scannedNode) {
+    private void HandleMissingNode(ScannedNode scannedNode) {
         if (scannedNode == null!) return;
 
         var node = scannedNode.ScanNodeProperties;

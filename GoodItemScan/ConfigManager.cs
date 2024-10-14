@@ -15,6 +15,8 @@ public static class ConfigManager {
 
     public static ConfigEntry<int> maxScanNodesToProcessPerFrame = null!;
 
+    public static ConfigEntry<bool> updateScanNodeText = null!;
+
     public static ConfigEntry<bool> sendDebugMessages = null!;
 
     public static ConfigEntry<bool> showOpenedBlastDoorScanNode = null!;
@@ -61,6 +63,9 @@ public static class ConfigManager {
                                                         new ConfigDescription("This value defines how many scan nodes can be processed each frame."
                                                                             + "This value is used in updating and scanning nodes!",
                                                                               new AcceptableValueRange<int>(1, 666)));
+
+        updateScanNodeText = configFile.Bind("General", "Update Scan Node Text", true, "If true, will update the scan node text. "
+                                                                                     + "This is useful, if you, for example, have a mod that updates the value of an item.");
 
         sendDebugMessages = configFile.Bind("Debug", "Send Debug Messages", false,
                                             "If set to true, will spam your log with debug messages.");
