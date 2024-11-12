@@ -78,4 +78,12 @@ public static class HUDManagerPatch {
         GoodItemScan.scanner = new();
         GoodItemScan.SetIncreasedMaximumScanNodes(__instance);
     }
+
+    [HarmonyPatch(nameof(HUDManager.OnDisable))]
+    [HarmonyPostfix]
+    private static void ResetCheatsAPI() {
+        CheatsAPI.additionalEnemyDistance = 0;
+        CheatsAPI.additionalEnemyDistance = 0;
+        CheatsAPI.noLineOfSightDistance = 0;
+    }
 }
