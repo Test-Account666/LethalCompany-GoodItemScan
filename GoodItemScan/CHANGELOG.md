@@ -1,5 +1,10 @@
 # Good Item Scan Mod
 
+## 1.11.0
+
+\* Fixed potential issue caused by integer overflow<br>
+\# CheatsAPI now resets to default values everytime HUDManager is disabled<br>
+
 ## 1.10.0
 
 \+ Added option to update the scan node text after scanning a node<br>
