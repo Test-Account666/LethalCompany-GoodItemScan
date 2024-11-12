@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.11.1
+
+\* Fixed null-keys not being handled correctly<br>
+
 ## 1.11.0
 
 \* Fixed potential issue caused by integer overflow<br>
