@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using GameNetcodeStuff;
+using MonoMod.Utils;
 using TMPro;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -16,6 +17,9 @@ public class Scanner {
     private Coroutine? _nodeVisibilityCheckCoroutine;
 
     private readonly HashSet<ScanNodeProperties> _scanNodesToRemove = [
+    ];
+
+    private readonly Dictionary<ScanNodeProperties, int> _tempScanNodesHolder = [
     ];
 
     private readonly Dictionary<ScanNodeProperties, int> _scanNodes = [
@@ -408,8 +412,22 @@ public class Scanner {
         var hudManager = HUDManager.Instance;
         if (hudManager == null) return;
 
-        foreach (var scanNodeProperties in _scanNodesToRemove) _scanNodes.Remove(scanNodeProperties);
-        _scanNodesToRemove.Clear();
+        // Oh lord...
+        if (_scanNodesToRemove.Count > 0) {
+            foreach (var (scanNodeProperties, index) in _scanNodes) {
+                if (scanNodeProperties == null || !scanNodeProperties) continue;
+                if (_scanNodesToRemove.Contains(scanNodeProperties)) continue;
+
+                _tempScanNodesHolder.Add(scanNodeProperties, index);
+            }
+
+
+            _scanNodes.Clear();
+            _scanNodes.AddRange(_tempScanNodesHolder);
+
+            _tempScanNodesHolder.Clear();
+            _scanNodesToRemove.Clear();
+        }
 
         UpdateScrapTotalValue(hudManager);
 
@@ -483,7 +501,7 @@ public class Scanner {
 
         var node = scannedNode.ScanNodeProperties;
 
-        if (node != null) _scanNodesToRemove.Add(node);
+        _scanNodesToRemove.Add(node!);
 
         scannedNode.ScanNodeProperties = null;
 
