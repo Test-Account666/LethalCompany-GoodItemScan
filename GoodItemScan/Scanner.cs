@@ -35,8 +35,6 @@ public class Scanner {
         DisableAllScanElements();
         _scannedNodes.Clear();
 
-        _cachedFovValues.Clear();
-
         var maxSize = ConfigManager.scanNodesHardLimit.Value;
 
         for (var index = 0; index < maxSize; index++) {
@@ -130,13 +128,11 @@ public class Scanner {
 
         var currentScanNodeCount = 0;
 
-        var playerLocation = localPlayer.transform.position;
-
         var processedNodesThisFrame = 0;
 
         if (ConfigManager.preferClosestNodes.Value)
             scanNodes = scanNodes.Where(node => node != null).Select(node => node!)
-                                 .OrderBy(node => Vector3.Distance(playerLocation, node.transform.position)).ToArray();
+                                 .OrderBy(node => Vector3.Distance(localPlayer.transform.position, node.transform.position)).ToArray();
 
 
         foreach (var scanNodeProperties in scanNodes) {
@@ -151,16 +147,19 @@ public class Scanner {
 
             var scanNodePosition = scanNodeProperties.transform.position;
 
-            var viewPoint = GameNetworkManager.Instance.localPlayerController.gameplayCamera.WorldToViewportPoint(scanNodePosition);
+            var viewPoint = localPlayer.gameplayCamera.WorldToViewportPoint(scanNodePosition);
 
             var onScreen = viewPoint is {
                 x: >= 0 and <= 1,
                 y: >= 0 and <= 1,
+                z: > 0,
             };
 
             if (!onScreen) continue;
 
-            var distance = viewPoint.z;
+            var cameraPosition = localPlayer.gameplayCamera.transform.position;
+
+            var distance = CalculateDistance(viewPoint, scanNodePosition, cameraPosition);
 
             var maxRange = scanNodeProperties.maxRange
                          + (scanNodeProperties.nodeType == 1? CheatsAPI.additionalEnemyDistance : CheatsAPI.additionalDistance);
@@ -171,7 +170,7 @@ public class Scanner {
             if (distance < scanNodeProperties.minRange) continue;
 
             if (distance > CheatsAPI.noLineOfSightDistance)
-                if (!HasLineOfSight(scanNodeProperties, localPlayer))
+                if (!HasLineOfSight(scanNodeProperties, cameraPosition))
                     continue;
 
             if (!IsScanNodeValid(scanNodeProperties)) continue;
@@ -187,14 +186,19 @@ public class Scanner {
         }
     }
 
-    private static bool HasLineOfSight(ScanNodeProperties scanNodeProperties, PlayerControllerB localPlayer) {
+    public static float CalculateDistance(Vector3 viewPoint, Vector3 objectPosition, Vector3 cameraPosition) {
+        return ConfigManager.calculateDistance.Value switch {
+            false => viewPoint.z,
+            true => Vector3.Distance(objectPosition, cameraPosition),
+        };
+    }
+
+    private static bool HasLineOfSight(ScanNodeProperties scanNodeProperties, Vector3 cameraPosition) {
         if (!scanNodeProperties.requiresLineOfSight) return true;
 
         var hasBoxCollider = TryGetOrAddBoxCollider(scanNodeProperties, out var boxCollider);
 
         if (!hasBoxCollider) return false;
-
-        var cameraPosition = localPlayer.gameplayCamera.transform.position;
 
         var minPosition = boxCollider.bounds.min;
 
@@ -292,10 +296,6 @@ public class Scanner {
         yield return new WaitForSeconds(ConfigManager.scanNodeDelay.Value / 100F * currentScanNodeCount);
         yield return null;
 
-        var localPlayer = StartOfRound.Instance.localPlayerController;
-
-        if (localPlayer == null) yield break;
-
         var hudManager = HUDManager.Instance;
 
         if (hudManager == null) yield break;
@@ -345,11 +345,14 @@ public class Scanner {
         var onScreen = viewPoint is {
             x: >= 0 and <= 1,
             y: >= 0 and <= 1,
+            z: > 0,
         };
 
         if (!onScreen) return false;
 
-        var distance = viewPoint.z;
+        var cameraPosition = localPlayer.gameplayCamera.transform.position;
+
+        var distance = CalculateDistance(viewPoint, node.transform.position, cameraPosition);
 
         var maxRange = node.maxRange
                      + (node.nodeType == 1? CheatsAPI.additionalEnemyDistance : CheatsAPI.additionalDistance);
@@ -362,44 +365,7 @@ public class Scanner {
 
         if (!IsScanNodeValid(scannedNode)) return false;
 
-        return !ConfigManager.alwaysCheckForLineOfSight.Value || distance <= CheatsAPI.noLineOfSightDistance || HasLineOfSight(node, localPlayer);
-    }
-
-    public bool IsScanNodeOnScreen(ScanNodeProperties node, Vector3 scanNodePosition) {
-        if (!node.gameObject.activeSelf) return false;
-
-        var localPlayer = StartOfRound.Instance.localPlayerController;
-        if (localPlayer == null) return false;
-
-        var camera = localPlayer.gameplayCamera;
-
-        var direction = scanNodePosition - camera.transform.position;
-        direction.Normalize();
-
-        var cosHalfAdjustedFOV = GetCosHalfAdjustedFov(camera);
-
-        return Vector3.Dot(direction, camera.transform.forward) >= cosHalfAdjustedFOV;
-    }
-
-    // I don't think we actually need a dictionary as cache, but just to be sure...
-    private readonly Dictionary<Camera, float> _cachedFovValues = [
-    ];
-
-    private float GetCosHalfAdjustedFov(Camera camera) {
-        if (_cachedFovValues.TryGetValue(camera, out var cosHalfAdjustedFOV)) return cosHalfAdjustedFOV;
-
-        var aspectRatio = camera.aspect;
-
-        // This multiplier exists to move the scannable range even closer to the screen's border.
-        // Haven't tested this on anything else than 4:3 and 16:9
-        var multiplier = 0.5f + aspectRatio / 100;
-
-        var adjustedFOV = Mathf.Atan(Mathf.Tan(camera.fieldOfView * multiplier * Mathf.Deg2Rad) / aspectRatio) * Mathf.Rad2Deg * 2;
-        cosHalfAdjustedFOV = Mathf.Cos(adjustedFOV * Mathf.Deg2Rad);
-
-        _cachedFovValues[camera] = cosHalfAdjustedFOV;
-
-        return cosHalfAdjustedFOV;
+        return !ConfigManager.alwaysCheckForLineOfSight.Value || distance <= CheatsAPI.noLineOfSightDistance || HasLineOfSight(node, cameraPosition);
     }
 
     private readonly HashSet<ScannedNode> _scanNodesToUpdate = [

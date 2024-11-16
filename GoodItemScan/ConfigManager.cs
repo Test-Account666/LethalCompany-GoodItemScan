@@ -17,6 +17,8 @@ public static class ConfigManager {
 
     public static ConfigEntry<bool> updateScanNodeText = null!;
 
+    public static ConfigEntry<bool> calculateDistance = null!;
+
     public static ConfigEntry<bool> sendDebugMessages = null!;
 
     public static ConfigEntry<bool> showOpenedBlastDoorScanNode = null!;
@@ -66,6 +68,10 @@ public static class ConfigManager {
 
         updateScanNodeText = configFile.Bind("General", "Update Scan Node Text", true, "If true, will update the scan node text. "
                                                                                      + "This is useful, if you, for example, have a mod that updates the value of an item.");
+
+        calculateDistance = configFile.Bind("General", "Calculate Distance", false, "If true, will perform additional distance calculations. "
+                                                                                  + "If false, use viewport as distance. "
+                                                                                  + "Set to `true`, if you don't mind slightly worse performance and want accurate distance calculations.");
 
         sendDebugMessages = configFile.Bind("Debug", "Send Debug Messages", false,
                                             "If set to true, will spam your log with debug messages.");
