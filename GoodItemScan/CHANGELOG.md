@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.12.0
+
+\+ Added optional distance calculation<br>
+
 ## 1.11.1
 
 \* Fixed null-keys not being handled correctly<br>
