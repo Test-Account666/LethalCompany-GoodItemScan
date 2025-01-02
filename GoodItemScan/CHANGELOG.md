@@ -1,5 +1,10 @@
 # Good Item Scan Mod
 
+## 1.13.0
+
+\+ Added config option to prevent scanning exploded landmines<br>
+\* Fixed scanning collected story logs<br>
+
 ## 1.12.0
 
 \+ Added optional distance calculation<br>
