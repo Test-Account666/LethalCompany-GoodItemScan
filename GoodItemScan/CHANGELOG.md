@@ -1,5 +1,9 @@
 # Good Item Scan Mod
 
+## 1.14.0
+
+\+ Added v72 support<br>
+
 ## 1.13.0
 
 \+ Added config option to prevent scanning exploded landmines<br>
