@@ -67,6 +67,8 @@ public static class HUDManagerPatch {
     private static bool PingScanPerformed(ref InputAction.CallbackContext context) {
         if (!context.performed) return false;
 
+        HUDManager.Instance.PingHUDElement(HUDManager.Instance.Compass, 1f, 0.8f, 0.12f);
+
         GoodItemScan.scanner?.Scan();
         return false;
     }
